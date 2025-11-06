@@ -1,0 +1,16 @@
+enum QuizAccessType {
+  OWNER
+  VIEWER
+  EDITOR
+}
+
+model QuizAccess {
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  accessType QuizAccessType @default(VIEWER)
+  profile    TeacherProfile @relation(fields: [profileId], references: [id], name: "QuizAccessProfile")
+  profileId  String         @db.ObjectId
+  quiz       Quiz           @relation(fields: [quizId], references: [id], name: "QuizAccessQuiz", onDelete: Cascade)
+  quizId     String         @db.ObjectId
+
+  @@unique([quizId, profileId])
+}

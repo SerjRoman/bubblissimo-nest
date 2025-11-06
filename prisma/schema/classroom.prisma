@@ -1,0 +1,20 @@
+model Classroom {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  teacher   TeacherProfile    @relation(fields: [teacherId], references: [id], name: "ClassroomTeacherRelation")
+  teacherId String            @db.ObjectId
+  members   ClassroomMember[] @relation(name: "ClassroomMemberRelation")
+  report    Report[]          @relation(name: "ReportClassroomRelation")
+}
+
+model ClassroomMember {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  classroom   Classroom      @relation(fields: [classroomId], references: [id], name: "ClassroomMemberRelation")
+  classroomId String         @db.ObjectId
+  student     StudentProfile @relation(fields: [studentId], references: [id], name: "ClassroomMemberStudentRelation")
+  studentId   String         @db.ObjectId
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}

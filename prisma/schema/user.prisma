@@ -1,0 +1,48 @@
+enum Role {
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id                 String          @id @default(auto()) @map("_id") @db.ObjectId
+  username           String          @unique
+  email              String          @unique
+  password           String
+  firstName          String
+  lastName           String
+  roles              Role[]
+  avatar             String?
+  favourite          Quiz[]          @relation(fields: [favouriteQuzzesIds], references: [id], name: "FavouriteQuizzesRelation")
+  favouriteQuzzesIds String[]        @db.ObjectId
+  teacherProfile     TeacherProfile?
+  studentProfile     StudentProfile?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  notifications      Notification[]
+}
+
+model TeacherProfile {
+  id                    String       @id @default(auto()) @map("_id") @db.ObjectId
+  createdQuizzes        Quiz[]       @relation(name: "CreatedQuizzesRelation")
+  ownedQuizzes          Quiz[]       @relation(name: "OwnedByQuizzesRelation")
+  copiedQuizzes         Quiz[]       @relation(fields: [copiedQuizzesIds], references: [id], name: "CopiedQuizzesRelation")
+  copiedQuizzesIds      String[]     @db.ObjectId
+  user                  User         @relation(fields: [userId], references: [id])
+  userId                String       @unique @db.ObjectId
+  quizFolders           QuizFolder[] @relation(name: "QuizFolderOwnerRelation")
+  classrooms            Classroom[]  @relation(name: "ClassroomTeacherRelation")
+  accesses              QuizAccess[] @relation(name: "QuizAccessProfile")
+  createdQuestions      Question[]   @relation(name: "CreatedQuestionsRelation")
+  favouriteQuestions    Question[]   @relation(fields: [favouriteQuestionsIds], references: [id], name: "FavouriteQuestionsRelation")
+  favouriteQuestionsIds String[]     @db.ObjectId
+}
+
+model StudentProfile {
+  id                  String               @id @default(auto()) @map("_id") @db.ObjectId
+  completedQuizzes    Quiz[]               @relation(fields: [completedQuizzesIds], references: [id], name: "CompletedByRelation")
+  completedQuizzesIds String[]             @db.ObjectId
+  user                User                 @relation(fields: [userId], references: [id])
+  userId              String               @unique @db.ObjectId
+  classroomMembership ClassroomMember[]    @relation(name: "ClassroomMemberStudentRelation")
+  quizParticipation   SessionParticipant[] @relation(name: "SessionParticipantStudentProfileRelation")
+}

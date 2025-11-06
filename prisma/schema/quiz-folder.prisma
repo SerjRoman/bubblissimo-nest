@@ -1,0 +1,15 @@
+model QuizFolder {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  slug           String
+  color          String
+  parentFolderId String?        @db.ObjectId
+  parentFolder   QuizFolder?    @relation(fields: [parentFolderId], references: [id], name: "QuizFolderParentRelation", onDelete: NoAction, onUpdate: NoAction)
+  subFolders     QuizFolder[]   @relation("QuizFolderParentRelation")
+  ownderId       String         @db.ObjectId
+  owner          TeacherProfile @relation(fields: [ownderId], references: [id], name: "QuizFolderOwnerRelation")
+  quizzes        Quiz[]         @relation(fields: [quizIds], references: [id], name: "QuizFolderQuizzesRelation")
+  quizIds        String[]       @db.ObjectId
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}

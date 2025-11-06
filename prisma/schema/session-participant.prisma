@@ -1,0 +1,21 @@
+enum ParticipantType {
+  STUDENT
+  GUEST
+}
+
+model SessionParticipant {
+  id               String                     @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  avatar           String
+  type             ParticipantType
+  studentProfileId String?                    @db.ObjectId
+  studentProfile   StudentProfile?            @relation(fields: [studentProfileId], references: [id], name: "SessionParticipantStudentProfileRelation")
+  sessionId        String                     @db.ObjectId
+  session          Session                    @relation(fields: [sessionId], references: [id], name: "SessionParticipantSessionRelation")
+  totalScore       Float                      @default(0)
+  totalTimeSpent   Int                        @default(0)
+  answers          SessionParticipantAnswer[] @relation(name: "SessionParticipantAttemptAnswer")
+
+  @@unique([sessionId, studentProfileId])
+  @@unique([sessionId, name])
+}
