@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserFromTokenPayload } from '../../common/decorators/user.decorator';
+import { Strategy, ExtractJwt } from 'passport-jwt';
 import { UserContractRepository } from '@modules/user/repository/user.repository.abstract';
+import { UserFromTokenPayload } from '@common/decorators';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -11,10 +11,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		configService: ConfigService,
 		private readonly userRepository: UserContractRepository,
 	) {
+		const secretKey = configService.get<string>('ACCESS_SECRET_KEY');
+		if (!secretKey) {
+			throw new Error('ACCESS_SECRET_KEY is not defined');
+		}
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
-			secretOrKey: configService.get<string>('ACCESS_SECRET_KEY'),
+			secretOrKey: secretKey,
 		});
 	}
 

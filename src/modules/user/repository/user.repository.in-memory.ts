@@ -10,11 +10,13 @@ import {
 	UserOmit,
 	UserSelect,
 	UserUpdateInput,
+	UserWhereInput,
 	UserWhereUnique,
 	UserWithArgs,
 	UserWithoutPassword,
 	UserWithSelect,
 } from '../user.types';
+import { PaginationParams, PaginatedResult } from '@common/types';
 
 @Injectable()
 export class InMemoryUserRepository implements UserContractRepository {
@@ -112,5 +114,60 @@ export class InMemoryUserRepository implements UserContractRepository {
 
 		const [deletedUser] = this.users.splice(userIndex, 1);
 		return deletedUser;
+	}
+	async getAll<I extends UserInclude, O extends UserOmit>({
+		pagination,
+	}: {
+		where?: UserWhereInput;
+		include?: I;
+		omit?: O;
+		pagination: PaginationParams;
+	}): Promise<PaginatedResult<UserWithArgs<I, O>>> {
+		const { page, perPage } = pagination;
+		const total = this.users.length;
+		const pageCount = Math.ceil(total / perPage);
+		const skip = (page - 1) * perPage;
+
+		const paginatedUsers = this.users.slice(skip, skip + perPage);
+		return [
+			paginatedUsers as unknown as UserWithArgs<I, O>[],
+			{
+				total,
+				page,
+				perPage,
+				pageCount,
+			},
+		];
+	}
+
+	async getAllWithSelect<S extends UserSelect>({
+		where,
+		pagination,
+	}: {
+		where?: UserWhereInput;
+		pagination: PaginationParams;
+		select?: S;
+	}): Promise<PaginatedResult<UserWithSelect<S>>> {
+		const filteredUsers = this.users.filter((user) => {
+			if (!where) return true;
+			return Object.keys(where).every((key) => user[key] === where[key]);
+		});
+
+		const { page, perPage } = pagination;
+		const total = filteredUsers.length;
+		const pageCount = Math.ceil(total / perPage);
+		const skip = (page - 1) * perPage;
+
+		const paginatedUsers = filteredUsers.slice(skip, skip + perPage);
+
+		return [
+			paginatedUsers as UserWithSelect<S>[],
+			{
+				total,
+				page,
+				perPage,
+				pageCount,
+			},
+		];
 	}
 }

@@ -11,9 +11,9 @@ import { AuthFactory } from './factories/auth.factory';
 import { InMemoryUserRepository } from '../../user/repository/user.repository.in-memory';
 import { UserContractRepository } from '../../user/repository/user.repository.abstract';
 import { UserFromTokenPayload } from '@common/decorators/user.decorator';
+import { HashUtil } from '@common/utils';
 
 jest.mock('../token.service');
-
 const mockTokenService = {
 	generateTokens: jest.fn(),
 	hashPassword: jest.fn(),
@@ -24,6 +24,10 @@ const mockTokenService = {
 	generateRefreshToken: jest.fn(),
 } as unknown as jest.Mocked<TokenService>;
 
+const mockHashUtil = {
+	hash: jest.fn(),
+	compare: jest.fn(),
+};
 describe('AuthService', () => {
 	let service: AuthService;
 	let repository: InMemoryUserRepository;
@@ -40,6 +44,7 @@ describe('AuthService', () => {
 					provide: TokenService,
 					useValue: mockTokenService,
 				},
+				{ provide: HashUtil, useValue: mockHashUtil },
 			],
 		}).compile();
 
@@ -66,7 +71,7 @@ describe('AuthService', () => {
 				accessToken: 'access_token',
 				refreshToken: 'refresh_token',
 			};
-			mockTokenService.hashPassword.mockResolvedValue(hashedPassword);
+			mockHashUtil.hash.mockResolvedValue(hashedPassword);
 			mockTokenService.generateTokens.mockResolvedValue(mockedTokens);
 			const result = await service.registerUser(registerUserDto);
 			const createdUser = await repository.getWithSelect({
@@ -78,7 +83,7 @@ describe('AuthService', () => {
 				},
 			});
 
-			expect(mockTokenService.hashPassword).toHaveBeenCalledWith(
+			expect(mockHashUtil.hash).toHaveBeenCalledWith(
 				registerUserDto.password,
 			);
 			expect(mockTokenService.generateTokens).toHaveBeenCalledWith({
@@ -129,12 +134,12 @@ describe('AuthService', () => {
 				refreshToken: 'refresh_token',
 			};
 
-			mockTokenService.comparePasswords.mockResolvedValue(true);
+			mockHashUtil.compare.mockResolvedValue(true);
 			mockTokenService.generateTokens.mockResolvedValue(mockedTokens);
 
 			const result = await service.login(loginDto);
 
-			expect(mockTokenService.comparePasswords).toHaveBeenCalledWith(
+			expect(mockHashUtil.compare).toHaveBeenCalledWith(
 				loginDto.password,
 				existingUser.password,
 			);
@@ -155,7 +160,7 @@ describe('AuthService', () => {
 				email: userDto.email,
 			});
 
-			mockTokenService.comparePasswords.mockResolvedValue(false);
+			mockHashUtil.compare.mockResolvedValue(false);
 
 			await expect(service.login(loginDto)).rejects.toThrow(
 				UnauthorizedException,
@@ -169,7 +174,7 @@ describe('AuthService', () => {
 			await expect(service.login(loginDto)).rejects.toThrow(
 				UnauthorizedException,
 			);
-			expect(mockTokenService.comparePasswords).not.toHaveBeenCalled();
+			expect(mockHashUtil.compare).not.toHaveBeenCalled();
 			expect(mockTokenService.generateTokens).not.toHaveBeenCalled();
 		});
 	});

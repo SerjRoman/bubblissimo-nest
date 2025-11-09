@@ -1,6 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import {
+	BadRequestException,
+	ValidationError,
+	ValidationPipe,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-extension-filter';
 
@@ -8,7 +12,21 @@ async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
 	app.useGlobalPipes(
-		new ValidationPipe({ whitelist: true, transform: true }),
+		new ValidationPipe({
+			whitelist: true,
+			transform: true,
+			exceptionFactory: (validationErrors: ValidationError[] = []) => {
+				console.log(validationErrors);
+				return new BadRequestException(
+					validationErrors.map((error) => ({
+						field: error.property,
+						error: error.constraints
+							? Object.values(error.constraints).join(', ')
+							: '',
+					})),
+				);
+			},
+		}),
 	);
 
 	app.useGlobalFilters(new HttpExceptionFilter());

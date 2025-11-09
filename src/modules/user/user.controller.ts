@@ -22,12 +22,12 @@ import {
 	ApiResponse,
 	ApiBearerAuth,
 	ApiParam,
+	ApiQuery,
 } from '@nestjs/swagger';
 import { UserEntity } from './entities/user.entity';
+import { QueryUserDto } from './dto';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth-guard';
-import type { UserInclude } from './user.types';
-import { SanitizeIncludePipe } from '@common/pipes/sanitize-include.pipe';
-import { USER_INCLUDE_RULES } from './constants/user.constants';
+import { QueryUsersDto } from './dto/query-users.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -53,18 +53,27 @@ export class UserController {
 
 	@Get(':id')
 	@ApiOperation({ summary: 'Get a user by ID' })
+	@ApiQuery({ type: QueryUserDto })
 	@ApiParam({ name: 'id', description: 'User ID' })
 	@ApiResponse({ status: 200, description: 'User found.', type: UserEntity })
 	@ApiResponse({ status: 404, description: 'User not found.' })
-	getById(
-		@Param('id', ParseUUIDPipe) id: string,
-		@Query('include', new SanitizeIncludePipe(USER_INCLUDE_RULES))
-		include?: UserInclude,
-	) {
-		this.logger.log(
-			`Received GET request /users/:id. ID: ${id}, INCLUDE: ${include}`,
-		);
-		return this.userService.findById(id, include);
+	getById(@Param('id') id: string, @Query() query?: QueryUserDto) {
+		this.logger.log(`Received GET request /users/:id. ID: ${id}`, {
+			query,
+		});
+		return this.userService.getById(id, query);
+	}
+	@Get('')
+	@ApiOperation({ summary: 'Get a user by ID' })
+	@ApiQuery({ type: QueryUserDto })
+	@ApiParam({ name: 'id', description: 'User ID' })
+	@ApiResponse({ status: 200, description: 'User found.', type: UserEntity })
+	@ApiResponse({ status: 404, description: 'User not found.' })
+	getAll(@Query() query: QueryUsersDto) {
+		this.logger.log(`Received GET request /users/.`, {
+			query,
+		});
+		return this.userService.getAll(query);
 	}
 
 	@Put(':id')
@@ -80,7 +89,9 @@ export class UserController {
 		@Body() updateUserDto: UpdateUserDto,
 	) {
 		this.logger.log(
-			`Received UPDATE request /users/:id. ID: ${id}, BODY: ${updateUserDto}`,
+			JSON.stringify(
+				`Received UPDATE request /users/:id. ID: ${id}, BODY: ${updateUserDto}`,
+			),
 		);
 		return this.userService.update(id, updateUserDto);
 	}

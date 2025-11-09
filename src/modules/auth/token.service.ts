@@ -77,15 +77,4 @@ export class TokenService {
 			throw new UnauthorizedException('Invalid refresh token');
 		}
 	}
-
-	async hashPassword(password: string): Promise<string> {
-		return hash(password, 10);
-	}
-
-	async comparePasswords(
-		plainPassword: string,
-		hashedPassword: string,
-	): Promise<boolean> {
-		return compare(plainPassword, hashedPassword);
-	}
 }

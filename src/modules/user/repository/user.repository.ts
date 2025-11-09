@@ -1,5 +1,3 @@
-import { PrismaErrorCodes } from '@common/types/prisma.types';
-import { handlePrismaError } from '@common/utils/prisma-error.handler';
 import {
 	ConflictException,
 	Injectable,
@@ -11,13 +9,21 @@ import {
 	UserInclude,
 	UserOmit,
 	UserSelect,
+	UserSortOptions,
 	UserUpdateInput,
+	UserWhereInput,
 	UserWhereUnique,
 	UserWithArgs,
 	UserWithoutPassword,
 	UserWithSelect,
 } from '../user.types';
 import { UserContractRepository } from './user.repository.abstract';
+import {
+	PaginationParams,
+	PaginatedResult,
+	PrismaErrorCodes,
+} from '@common/types';
+import { handlePrismaError } from '@common/utils';
 
 @Injectable()
 export class UserRepository implements UserContractRepository {
@@ -83,5 +89,48 @@ export class UserRepository implements UserContractRepository {
 		return handlePrismaError(userPromise, {
 			[PrismaErrorCodes.NOT_FOUND]: new NotFoundException('User'),
 		});
+	}
+	async getAll<I extends UserInclude, O extends UserOmit>({
+		where,
+		pagination,
+		include,
+		omit,
+		orderBy,
+	}: {
+		where?: UserWhereInput;
+		include?: I;
+		omit?: O;
+		pagination: PaginationParams;
+		orderBy?: UserSortOptions;
+	}): Promise<PaginatedResult<UserWithArgs<I, O>>> {
+		const prismaParams = { where, include, omit, orderBy };
+		const usersPromise = this.prisma.client.user
+			.paginate({ ...prismaParams })
+			.withPages({
+				page: pagination.page,
+				limit: pagination.perPage,
+			}) as unknown as Promise<PaginatedResult<UserWithArgs<I, O>>>;
+		return handlePrismaError(usersPromise, {});
+	}
+	async getAllWithSelect<S extends UserSelect>({
+		where,
+		pagination,
+		select,
+		orderBy,
+	}: {
+		where?: UserWhereInput;
+		pagination: PaginationParams;
+		select?: S;
+		orderBy?: UserSortOptions;
+	}): Promise<PaginatedResult<UserWithSelect<S>>> {
+		const prismaParams = { where, select, orderBy };
+		const usersPromise = this.prisma.client.user
+			.paginate(prismaParams)
+			.withPages({
+				page: pagination.page,
+				limit: pagination.perPage,
+			}) as unknown as Promise<PaginatedResult<UserWithSelect<S>>>;
+
+		return handlePrismaError(usersPromise, {});
 	}
 }

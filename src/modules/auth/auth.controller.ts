@@ -15,11 +15,8 @@ import {
 } from '@nestjs/swagger';
 import { LoginDto, RefreshDto, RegisterUserDto } from './dto';
 import { AuthService } from './auth.service';
+import { UserDecorator, type UserFromTokenPayload } from '@common/decorators';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth-guard';
-import {
-	User,
-	type UserFromTokenPayload,
-} from '@common/decorators/user.decorator';
 @Injectable()
 @ApiTags('Auth')
 @Controller('auth')
@@ -76,7 +73,7 @@ export class AuthController {
 	})
 	@ApiBearerAuth()
 	@UseGuards(JwtAuthGuard)
-	me(@User() user: UserFromTokenPayload) {
+	me(@UserDecorator() user: UserFromTokenPayload) {
 		this.logger.log(`Received GET request /me: ${user}`);
 		return this.authService.me({ userId: user.userId });
 	}

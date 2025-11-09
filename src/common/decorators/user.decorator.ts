@@ -8,7 +8,7 @@ export interface UserFromTokenPayload {
     studentId?: string;
 }
 
-export const User = createParamDecorator(
+export const UserDecorator = createParamDecorator(
     (data: unknown, ctx: ExecutionContext): UserFromTokenPayload => {
         const request: { user: UserFromTokenPayload } = ctx.switchToHttp().getRequest();
         return request.user;

@@ -10,6 +10,7 @@ import { LoginDto, MeDto, RefreshDto, RegisterUserDto } from './dto';
 import { UserContractRepository } from '@modules/user/repository/user.repository.abstract';
 import { TokenService } from './token.service';
 import { UserCreateInput, UserWithSelect } from '@modules/user/user.types';
+import { HashUtil } from '@common/utils';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
 	constructor(
 		private readonly repository: UserContractRepository,
 		private readonly tokenService: TokenService,
+		private readonly hashUtil: HashUtil,
 	) {}
 	async registerUser(dto: RegisterUserDto): Promise<TokenResponse> {
 		this.logger.log(`Attempting to register user with email: ${dto.email}`);
@@ -42,9 +44,7 @@ export class AuthService {
 			throw new ConflictException('User with this email already exists');
 		}
 		this.logger.warn('Hashing password');
-		const hashedPassword = await this.tokenService.hashPassword(
-			dto.password,
-		);
+		const hashedPassword = await this.hashUtil.hash(dto.password);
 
 		const prismaData: UserCreateInput = {
 			...dto,
@@ -104,7 +104,6 @@ export class AuthService {
 				},
 			});
 		} catch (error) {
-			this.logger.error(error);
 			if (!(error instanceof NotFoundException)) {
 				this.logger.warn(
 					`Login failed: user does not exist: ${dto.email}`,
@@ -116,7 +115,7 @@ export class AuthService {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 
-		const isMatch = await this.tokenService.comparePasswords(
+		const isMatch = await this.hashUtil.compare(
 			password,
 			user.password as string,
 		);
