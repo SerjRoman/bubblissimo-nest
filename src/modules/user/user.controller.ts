@@ -38,6 +38,16 @@ export class UserController {
 
 	constructor(private readonly userService: UserService) {}
 
+	@Get()
+	@ApiOperation({ summary: 'Gets users' })
+	@ApiQuery({ type: QueryUserDto })
+	getAll(@Query() query: QueryUsersDto) {
+		this.logger.log(`Received GET request /users/.`, {
+			query,
+		});
+		return this.userService.getAll(query);
+	}
+
 	@Post()
 	@ApiOperation({ summary: 'Create a new user' })
 	@ApiResponse({
@@ -62,18 +72,6 @@ export class UserController {
 			query,
 		});
 		return this.userService.getById(id, query);
-	}
-	@Get('')
-	@ApiOperation({ summary: 'Get a user by ID' })
-	@ApiQuery({ type: QueryUserDto })
-	@ApiParam({ name: 'id', description: 'User ID' })
-	@ApiResponse({ status: 200, description: 'User found.', type: UserEntity })
-	@ApiResponse({ status: 404, description: 'User not found.' })
-	getAll(@Query() query: QueryUsersDto) {
-		this.logger.log(`Received GET request /users/.`, {
-			query,
-		});
-		return this.userService.getAll(query);
 	}
 
 	@Put(':id')
