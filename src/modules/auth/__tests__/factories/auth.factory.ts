@@ -1,3 +1,4 @@
+import { User } from '@modules/user/entities';
 import { RegisterUserDto, LoginDto, MeDto, RefreshDto } from '../../dto/';
 export class AuthFactory {
 	static buildRegisterUserDto(
@@ -31,5 +32,22 @@ export class AuthFactory {
 			userId: 'user-id',
 		};
 		return { ...defaultMeDto, ...overrides };
+	}
+	static buildRepositoryUser(overrides?: Partial<User>) {
+		return {
+			email: 'test@gmail.com',
+			username: 'test-username',
+			password: 'test-password',
+			firstName: 'test-first-name',
+			lastName: 'test-last-name',
+			roles: [],
+			id: 'test-id',
+			avatar: null,
+			favouriteQuizzes: [],
+			createdAt: new Date(),
+			updatedAt: new Date(),
+
+			...overrides,
+		};
 	}
 }

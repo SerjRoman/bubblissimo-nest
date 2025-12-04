@@ -2,7 +2,6 @@ import { UserFromTokenPayload } from '@common/decorators/user.decorator';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
-import { compare, hash } from 'bcryptjs';
 import { StringValue } from 'ms';
 import { TokenResponse } from './auth.types';
 

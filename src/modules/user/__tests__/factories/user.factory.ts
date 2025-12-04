@@ -1,3 +1,4 @@
+import { Role } from '../../enums/user.enums';
 import { CreateUserDto } from '../../dto/create-user.dto';
 
 export class UserFactory {
@@ -8,7 +9,7 @@ export class UserFactory {
 			firstName: 'test-first-name',
 			lastName: 'test-last-name',
 			username: 'test-username',
-			role: 'TEACHER',
+			roles: [Role.TEACHER],
 		};
 
 		return {

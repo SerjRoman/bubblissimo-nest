@@ -2,14 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { UserContractRepository } from '@modules/user/repository/user.repository.abstract';
 import { UserFromTokenPayload } from '@common/decorators';
+import { Repository } from 'typeorm';
+import { User } from '@modules/user/entities';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
 	constructor(
 		configService: ConfigService,
-		private readonly userRepository: UserContractRepository,
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>,
 	) {
 		const secretKey = configService.get<string>('ACCESS_SECRET_KEY');
 		if (!secretKey) {
@@ -25,12 +28,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	async validate(
 		payload: UserFromTokenPayload,
 	): Promise<UserFromTokenPayload> {
-		const user = await this.userRepository.getWithSelect({
+		const user = await this.userRepository.findOneOrFail({
 			where: { id: payload.userId },
 			select: {
 				roles: true,
-				studentProfile: { select: { id: true } },
-				teacherProfile: { select: { id: true } },
+				studentProfile: { id: true },
+				teacherProfile: { id: true },
 			},
 		});
 		return {

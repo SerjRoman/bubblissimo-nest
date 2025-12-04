@@ -1,6 +1,0 @@
-model Subject {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  name    String @unique
-  slug    String @unique
-  quizzes Quiz[] @relation(name: "QuizSubjectRelation")
-}

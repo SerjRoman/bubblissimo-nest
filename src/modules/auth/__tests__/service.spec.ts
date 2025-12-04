@@ -8,37 +8,29 @@ import {
 import { AuthService } from '../auth.service';
 import { TokenService } from '../token.service';
 import { AuthFactory } from './factories/auth.factory';
-import { InMemoryUserRepository } from '../../user/repository/user.repository.in-memory';
-import { UserContractRepository } from '../../user/repository/user.repository.abstract';
 import { UserFromTokenPayload } from '@common/decorators/user.decorator';
 import { HashUtil } from '@common/utils';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { UserContractRepository } from '@modules/user/repository/user.repository.abstract';
 
 jest.mock('../token.service');
-const mockTokenService = {
-	generateTokens: jest.fn(),
-	hashPassword: jest.fn(),
-	comparePasswords: jest.fn(),
-	verifyAccessToken: jest.fn(),
-	verifyRefreshToken: jest.fn(),
-	generateAccessToken: jest.fn(),
-	generateRefreshToken: jest.fn(),
-} as unknown as jest.Mocked<TokenService>;
 
-const mockHashUtil = {
-	hash: jest.fn(),
-	compare: jest.fn(),
-};
 describe('AuthService', () => {
 	let service: AuthService;
-	let repository: InMemoryUserRepository;
+	let mockRepository: DeepMockProxy<UserContractRepository>;
+	let mockTokenService: DeepMockProxy<TokenService>;
+	let mockHashUtil: DeepMockProxy<HashUtil>;
 
 	beforeEach(async () => {
+		mockTokenService = mockDeep<TokenService>();
+		mockHashUtil = mockDeep<HashUtil>();
+		mockRepository = mockDeep<UserContractRepository>();
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
 				AuthService,
 				{
 					provide: UserContractRepository,
-					useClass: InMemoryUserRepository,
+					useValue: mockRepository,
 				},
 				{
 					provide: TokenService,
@@ -49,11 +41,6 @@ describe('AuthService', () => {
 		}).compile();
 
 		service = module.get<AuthService>(AuthService);
-		repository = module.get<UserContractRepository>(
-			UserContractRepository,
-		) as InMemoryUserRepository;
-
-		repository.clear();
 		jest.clearAllMocks();
 	});
 
@@ -66,68 +53,76 @@ describe('AuthService', () => {
 			const registerUserDto = AuthFactory.buildRegisterUserDto({
 				roles: ['TEACHER'],
 			});
+			const notFoundError = new NotFoundException();
 			const hashedPassword = 'hashed_password';
 			const mockedTokens = {
 				accessToken: 'access_token',
 				refreshToken: 'refresh_token',
 			};
-			mockHashUtil.hash.mockResolvedValue(hashedPassword);
-			mockTokenService.generateTokens.mockResolvedValue(mockedTokens);
-			const result = await service.registerUser(registerUserDto);
-			const createdUser = await repository.getWithSelect({
-				where: { email: registerUserDto.email },
-				select: {
-					password: true,
-					id: true,
-					roles: true,
-				},
-			});
+			const userInRepo = AuthFactory.buildRepositoryUser();
 
+			mockHashUtil.hash.mockResolvedValue(hashedPassword);
+
+			mockTokenService.generateTokens.mockResolvedValue(mockedTokens);
+
+			mockRepository.get.mockRejectedValueOnce(notFoundError);
+			mockRepository.get.mockResolvedValueOnce(userInRepo);
+			mockRepository.create.mockResolvedValue(userInRepo);
+
+			const result = await service.registerUser(registerUserDto);
+			console.log(registerUserDto);
 			expect(mockHashUtil.hash).toHaveBeenCalledWith(
 				registerUserDto.password,
 			);
 			expect(mockTokenService.generateTokens).toHaveBeenCalledWith({
-				userId: createdUser.id,
-				roles: createdUser.roles,
+				userId: userInRepo.id,
+				roles: userInRepo.roles,
 			});
 
-			expect(createdUser.password).toBe(hashedPassword);
+			expect(mockRepository.create).toHaveBeenCalledWith({
+				data: {
+					...registerUserDto,
+					password: hashedPassword,
+					teacherProfile: { create: {} },
+					studentProfile: undefined,
+				},
+			});
 
 			expect(result).toEqual(mockedTokens);
 		});
 
 		it('should throw ConflictException if user already exists', async () => {
 			const userDto = AuthFactory.buildRegisterUserDto();
-			await repository.create(userDto);
+			const user = AuthFactory.buildRepositoryUser();
 
-			await expect(service.registerUser(userDto)).rejects.toThrow(
-				ConflictException,
-			);
+			mockRepository.get.mockResolvedValue(user);
+			mockRepository.create.mockResolvedValue(user);
+
+			await expect(
+				service.registerUser({ ...userDto, email: user.email }),
+			).rejects.toBeInstanceOf(ConflictException);
 		});
 	});
 
 	describe('login', () => {
 		it('should login a user and return tokens if credentials are correct', async () => {
-			const userDto = AuthFactory.buildRegisterUserDto();
-			const hashedPassword = `hashed_${userDto.password}`;
-			await repository.create({
-				...userDto,
+			const baseUser = AuthFactory.buildRepositoryUser();
+			const hashedPassword = `hashed_password`;
+
+			const existingUser = {
+				...baseUser,
 				password: hashedPassword,
-			});
-			const existingUser = await repository.getWithSelect({
-				where: { email: userDto.email },
-				select: {
-					password: true,
-					id: true,
-					teacherProfile: { select: { id: true } },
-					studentProfile: { select: { id: true } },
-					roles: true,
-				},
-			});
+				studentProfile: { id: 'student_123' },
+				teacherProfile: null,
+			} as typeof baseUser & {
+				studentProfile: { id: string };
+				teacherProfile?: { id: string } | null;
+			};
+			mockRepository.get.mockResolvedValue(existingUser);
 
 			const loginDto = {
-				email: userDto.email,
-				password: userDto.password,
+				email: existingUser.email,
+				password: 'password',
 			};
 			const mockedTokens = {
 				accessToken: 'access_token',
@@ -145,26 +140,25 @@ describe('AuthService', () => {
 			);
 			expect(mockTokenService.generateTokens).toHaveBeenCalledWith({
 				userId: existingUser.id,
-				studentId: existingUser.studentProfile?.id,
-				teacherId: existingUser.studentProfile?.id,
+				studentId: existingUser.studentProfile.id,
+				teacherId: existingUser.teacherProfile?.id,
 				roles: existingUser.roles,
 			});
 			expect(result).toEqual(mockedTokens);
 		});
 
 		it('should throw UnauthorizedException if password is wrong', async () => {
-			const userDto = AuthFactory.buildRegisterUserDto();
-			await repository.create(userDto);
+			const user = AuthFactory.buildRepositoryUser();
+			mockRepository.create.mockResolvedValue(user);
 
 			const loginDto = AuthFactory.buildLoginDto({
-				email: userDto.email,
+				email: user.email,
 			});
-
-			mockHashUtil.compare.mockResolvedValue(false);
 
 			await expect(service.login(loginDto)).rejects.toThrow(
 				UnauthorizedException,
 			);
+			expect(mockHashUtil.compare).not.toHaveBeenCalled();
 			expect(mockTokenService.generateTokens).not.toHaveBeenCalled();
 		});
 
@@ -217,27 +211,29 @@ describe('AuthService', () => {
 	});
 	describe('me', () => {
 		it('should return user data by access token', async () => {
-			const userRegisterDto = AuthFactory.buildRegisterUserDto();
-			const createdUser = await repository.create(userRegisterDto);
+			const user = AuthFactory.buildRepositoryUser();
+			mockRepository.get.mockResolvedValue(user);
 			const userPayload: UserFromTokenPayload = {
-				userId: createdUser.id,
-				roles: createdUser.roles,
+				userId: user.id,
+				roles: user.roles,
 				teacherId: 'test-teacher-id',
 			};
 			const userData = await service.me({ userId: userPayload.userId });
 
-			expect(userData).toStrictEqual(createdUser);
+			expect(userData).toStrictEqual(user);
 		});
 		it('should throw NotFoundException if user not found by id', async () => {
+			const notFoundError = new NotFoundException();
 			const userPayload: UserFromTokenPayload = {
 				userId: 'user-id',
 				roles: ['TEACHER'],
 				teacherId: 'test-teacher-id',
 			};
+			mockRepository.get.mockRejectedValue(notFoundError);
 
 			await expect(
 				service.me({ userId: userPayload.userId }),
-			).rejects.toThrow(NotFoundException);
+			).rejects.toThrow(notFoundError);
 		});
 	});
 });

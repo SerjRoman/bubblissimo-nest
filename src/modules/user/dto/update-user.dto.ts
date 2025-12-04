@@ -7,7 +7,7 @@ import {
 	MaxLength,
 	IsEnum,
 } from 'class-validator';
-import { UserRolesEnum } from '../user.types';
+import { Role } from '../enums/user.enums';
 
 export class UpdateUserDto {
 	@ApiProperty({ required: false })
@@ -29,10 +29,10 @@ export class UpdateUserDto {
 	@IsOptional()
 	password?: string;
 
-	@ApiProperty({ enum: UserRolesEnum, required: false })
-	@IsEnum(UserRolesEnum)
+	@ApiProperty({ enum: Role, required: false })
+	@IsEnum(Role)
 	@IsOptional()
-	role?: UserRolesEnum;
+	role?: Role;
 
 	@ApiProperty({ required: false })
 	@IsString()

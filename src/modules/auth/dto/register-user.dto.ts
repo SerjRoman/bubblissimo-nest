@@ -1,4 +1,4 @@
-import { UserRolesEnum } from '@modules/user/user.types';
+import { Role } from '@modules/user/enums';
 import { ApiProperty } from '@nestjs/swagger';
 import {
 	IsArray,
@@ -39,9 +39,9 @@ export class RegisterUserDto {
 
 	@ApiProperty({
 		type: 'array',
-		enum: UserRolesEnum,
-		example: UserRolesEnum.STUDENT,
+		enum: Role,
+		example: Role.STUDENT,
 	})
 	@IsArray()
-	roles: UserRolesEnum[];
+	roles: Role[];
 }

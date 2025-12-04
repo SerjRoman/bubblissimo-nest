@@ -1,26 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { UserContractRepository } from '../repository/user.repository.abstract';
 import { UserService } from '../user.service';
-import { InMemoryUserRepository } from '../repository/user.repository.in-memory';
 import { UserFactory } from './factories/user.factory';
 import { HashUtil } from '@common/utils';
-const mockHashUtil = {
-	hash: jest.fn(),
-	compare: jest.fn(),
-};
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { EntityNotFoundError, Repository } from 'typeorm';
+import { StudentProfile, TeacherProfile, User } from '../entities';
+
 describe('UserService', () => {
 	let service: UserService;
-	let repository: InMemoryUserRepository;
+	let mockUserRepository: DeepMockProxy<Repository<User>>;
+	let mockHashUtil: DeepMockProxy<HashUtil>;
+	const mockUserInRepo = {
+		...UserFactory.buildCreateDto(),
+		id: 'user-1',
+		roles: [],
+		avatar: null,
+		favouriteQuzzesIds: [],
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
 
 	beforeEach(async () => {
+		mockUserRepository = mockDeep<Repository<User>>();
+		mockHashUtil = mockDeep<HashUtil>();
+
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
 				UserService,
-				{
-					provide: UserContractRepository,
-					useClass: InMemoryUserRepository,
-				},
 				{
 					provide: HashUtil,
 					useValue: mockHashUtil,
@@ -29,11 +35,6 @@ describe('UserService', () => {
 		}).compile();
 
 		service = module.get<UserService>(UserService);
-		repository = module.get<UserContractRepository>(
-			UserContractRepository,
-		) as InMemoryUserRepository;
-
-		repository.clear();
 	});
 
 	it('should be defined', () => {
@@ -43,6 +44,10 @@ describe('UserService', () => {
 	describe('create', () => {
 		it('should create a user and hash the password', async () => {
 			const userCreateDto = UserFactory.buildCreateDto();
+
+			mockUserRepository.create.mockResolvedValue;
+			mockHashUtil.hash.mockResolvedValue(userCreateDto.password);
+
 			const result = await service.create(userCreateDto);
 
 			expect(result).toBeDefined();
@@ -53,48 +58,71 @@ describe('UserService', () => {
 
 	describe('getById', () => {
 		it('should find and return a user by id', async () => {
-			const userCreateDto = UserFactory.buildCreateDto();
-			const createdUser = await service.create(userCreateDto);
+			mockUserRepository.get.mockResolvedValue(mockUserInRepo);
 
-			const foundUser = await service.getById(createdUser.id);
+			const foundUser = await service.getById(mockUserInRepo.id);
 
 			expect(foundUser).toBeDefined();
-			expect(foundUser.id).toBe(createdUser.id);
+			expect(foundUser.id).toBe(mockUserInRepo.id);
 		});
 
 		it('should throw NotFoundException if user does not exist', async () => {
+			const notFoundError = new EntityNotFoundError(User, null);
+			mockUserRepository.findOneOrFail.mockRejectedValue(notFoundError);
+
 			await expect(service.getById('non-existent-id')).rejects.toThrow(
-				NotFoundException,
+				notFoundError,
 			);
 		});
 	});
 
 	describe('delete', () => {
 		it('should delete a user and then it should not be findable', async () => {
-			const userCreateDto = UserFactory.buildCreateDto();
-			const createdUser = await service.create(userCreateDto);
-			expect(await service.getById(createdUser.id)).toBeDefined();
-			await service.delete(createdUser.id);
-			await expect(service.getById(createdUser.id)).rejects.toThrow(
-				NotFoundException,
+			const notFoundError = new EntityNotFoundError(User, null);
+			mockUserRepository.findOneOrFail.mockRejectedValueOnce({});
+			mockUserRepository.remove.mockResolvedValue({
+				id: '',
+				username: '',
+				email: '',
+				password: '',
+				firstName: '',
+				lastName: '',
+				roles: [],
+				avatar: null,
+				favouriteQuizzes: [],
+				notifications: [],
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				teacherProfile: new TeacherProfile(),
+				studentProfile: new StudentProfile(),
+			});
+			mockUserRepository.findOneOrFail.mockRejectedValueOnce(
+				notFoundError,
+			);
+
+			expect(await service.delete(mockUserInRepo.id)).toStrictEqual(
+				mockUserInRepo,
+			);
+
+			await expect(service.getById(mockUserInRepo.id)).rejects.toThrow(
+				notFoundError,
 			);
 		});
 	});
 
 	describe('getAll', () => {
 		it('should get all users with pagination', async () => {
-			const userCreateDto1 = UserFactory.buildCreateDto();
-			const userCreateDto2 = UserFactory.buildCreateDto({
-				email: 'test2@gmail.com',
-			});
-			await service.create(userCreateDto1);
-			await service.create(userCreateDto2);
+			const users = [mockUserInRepo, mockUserInRepo];
 			const expectedPagination = {
 				page: 1,
 				perPage: 20,
-				pageCount: 1,
+				totalPages: 1,
 				total: 2,
 			};
+			mockUserRepository.getAll.mockResolvedValue([
+				users,
+				expectedPagination,
+			]);
 			const usersWithPagination = await service.getAll({
 				page: 1,
 				perPage: 20,

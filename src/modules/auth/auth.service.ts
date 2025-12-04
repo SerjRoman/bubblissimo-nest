@@ -7,30 +7,33 @@ import {
 } from '@nestjs/common';
 import { AuthenticatedUserResponse, TokenResponse } from './auth.types';
 import { LoginDto, MeDto, RefreshDto, RegisterUserDto } from './dto';
-import { UserContractRepository } from '@modules/user/repository/user.repository.abstract';
 import { TokenService } from './token.service';
-import { UserCreateInput, UserWithSelect } from '@modules/user/user.types';
-import { HashUtil } from '@common/utils';
+import { HashUtil } from '@common/utils/hash.util';
+import { EntityNotFoundError, Repository } from 'typeorm';
+import { User } from '@modules/user/entities';
+import { Role } from '@modules/user/enums';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class AuthService {
 	private readonly logger = new Logger(AuthService.name);
 
 	constructor(
-		private readonly repository: UserContractRepository,
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>,
 		private readonly tokenService: TokenService,
 		private readonly hashUtil: HashUtil,
 	) {}
 	async registerUser(dto: RegisterUserDto): Promise<TokenResponse> {
 		this.logger.log(`Attempting to register user with email: ${dto.email}`);
 
-		let isExisting = false;
+		let isExisting = true;
 		try {
-			await this.repository.get({
+			await this.userRepository.findOneOrFail({
 				where: { email: dto.email },
 			});
 		} catch (error) {
-			if (error instanceof NotFoundException) {
+			if (error instanceof EntityNotFoundError) {
 				isExisting = false;
 			} else {
 				isExisting = true;
@@ -46,25 +49,21 @@ export class AuthService {
 		this.logger.warn('Hashing password');
 		const hashedPassword = await this.hashUtil.hash(dto.password);
 
-		const prismaData: UserCreateInput = {
-			...dto,
-			password: hashedPassword,
-			roles: [],
-			studentProfile: dto.roles.includes('STUDENT')
-				? { create: {} }
-				: undefined,
-			teacherProfile: dto.roles.includes('TEACHER')
-				? { create: {} }
-				: undefined,
-		};
-		this.logger.warn(`Creating user with such query: ${prismaData}`);
 
-		const createdUser = await this.repository.create(prismaData);
-		const user = await this.repository.getWithSelect({
+		const createdUser = this.userRepository.create({
+			...dto,
+			studentProfile: dto.roles.includes(Role.STUDENT) ? {} : undefined,
+			teacherProfile: dto.roles.includes(Role.TEACHER) ? {} : undefined,
+			password: hashedPassword,
+		});
+		this.logger.warn(`Creating user: ${createdUser}`);
+
+		await this.userRepository.save(createdUser);
+		const user = await this.userRepository.findOneOrFail({
 			where: { id: createdUser.id },
 			select: {
-				teacherProfile: { select: { id: true } },
-				studentProfile: { select: { id: true } },
+				teacherProfile: { id: true },
+				studentProfile: { id: true },
 				roles: true,
 				id: true,
 			},
@@ -85,30 +84,24 @@ export class AuthService {
 			`Attemptin to log in the user with email: ${dto.email}`,
 		);
 		const { email, password } = dto;
-		let user: UserWithSelect<{
-			password: true;
-			id: true;
-			teacherProfile: { select: { id: true } };
-			studentProfile: { select: { id: true } };
-			roles: true;
-		}> | null = null;
+		let user: User | null = null;
 		try {
-			user = await this.repository.getWithSelect({
+			user = await this.userRepository.findOneOrFail({
 				where: { email },
 				select: {
 					password: true,
 					id: true,
-					teacherProfile: { select: { id: true } },
-					studentProfile: { select: { id: true } },
+					teacherProfile: { id: true },
+					studentProfile: { id: true },
 					roles: true,
 				},
 			});
 		} catch (error) {
-			if (!(error instanceof NotFoundException)) {
+			if (!(error instanceof EntityNotFoundError)) {
 				this.logger.warn(
 					`Login failed: user does not exist: ${dto.email}`,
 				);
-				throw error;
+				throw NotFoundException;
 			}
 		}
 		if (!user) {
@@ -143,7 +136,7 @@ export class AuthService {
 		return { accessToken: newAccessToken };
 	}
 	async me(dto: MeDto): Promise<AuthenticatedUserResponse> {
-		const userData = await this.repository.getWithSelect({
+		const userData = await this.userRepository.findOneOrFail({
 			where: { id: dto.userId },
 			select: {
 				id: true,

@@ -23,8 +23,6 @@
 		"paths": {
 			"@common/*": ["./src/common/*"],
 			"@auth/*": ["./src/auth/*"],
-			"#prisma/*": ["./src/generated/prisma/*"],
-			"@prisma": ["./src/prisma"],
 			"@modules/*": ["./src/modules/*"]
 		}
 	}

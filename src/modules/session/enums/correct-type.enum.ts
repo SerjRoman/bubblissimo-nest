@@ -1,0 +1,5 @@
+export enum CorrectType {
+	CORRECT = 'CORRECT',
+	PARTIALLY = 'PARTIALLY',
+	INCORRECT = 'INCORRECT',
+}

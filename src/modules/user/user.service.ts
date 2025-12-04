@@ -1,109 +1,92 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import type {
-	DynamicUserResult,
-	UserWhereInput,
-	UserWithoutPassword,
-} from './user.types';
-import { UserContractRepository } from './repository/user.repository.abstract';
-import { QueryUserDto } from './dto';
-import { QueryUsersDto } from './dto/query-users.dto';
-import { PaginatedResult } from '@common/types';
+import { Injectable, Logger } from '@nestjs/common';
+import { CreateUserDto, QueryUsersDto, UpdateUserDto } from './dto';
 import { HashUtil } from '@common/utils';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { User } from './entities';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PaginatedResult } from '@common/types';
 
 @Injectable()
 export class UserService {
+	private readonly logger = new Logger(UserService.name);
 	constructor(
-		private readonly userRepository: UserContractRepository,
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>,
 		private readonly hashUtil: HashUtil,
 	) {}
 
-	async create(createUserDto: CreateUserDto): Promise<UserWithoutPassword> {
+	async create(createUserDto: CreateUserDto): Promise<User> {
 		const hashedPassword = await this.hashUtil.hash(createUserDto.password);
-		const user = await this.userRepository.create({
+		const user = this.userRepository.create({
 			...createUserDto,
 			password: hashedPassword,
 		});
-
+		await this.userRepository.save(user);
 		return user;
 	}
 
-	async getById<Q extends QueryUserDto>(
-		id: string,
-		queryDto?: Q,
-	): Promise<DynamicUserResult<Q>> {
-		if (queryDto?.select) {
-			const user = await this.userRepository.getWithSelect({
-				where: { id },
-				...queryDto,
-			});
-			return user as DynamicUserResult<Q>;
-		}
-
-		const user = await this.userRepository.get({
+	async getById(id: string): Promise<User> {
+		this.logger.debug(
+			`Looking for a user by id: ${id} with the following parameters`,
+		);
+		const user = await this.userRepository.findOneOrFail({
 			where: { id },
-			...queryDto,
 		});
-		return user as unknown as DynamicUserResult<Q>;
+		return user;
 	}
-	async getAll<Q extends QueryUsersDto>(
-		queryDto: QueryUsersDto,
-	): Promise<PaginatedResult<DynamicUserResult<Q>>> {
-		const pagination = {
-			perPage: queryDto.perPage,
-			page: queryDto.page,
-		};
-		const where: UserWhereInput = queryDto.search
-			? {
-					OR: [
-						{
-							username: {
-								contains: queryDto.search,
-								mode: 'insensitive',
-							},
-						},
-						{
-							email: {
-								contains: queryDto.search,
-								mode: 'insensitive',
-							},
-						},
-					],
-				}
+	async getAll(queryDto: QueryUsersDto): Promise<PaginatedResult<User>> {
+		this.logger.debug('Finding users with the following parameters', {
+			queryDto,
+		});
+		const { page = 1, perPage = 10, order, search } = queryDto;
+
+		const take = perPage;
+		const skip = (page - 1) * perPage;
+
+		const where: FindOptionsWhere<User>[] | FindOptionsWhere<User> = search
+			? [
+					{ email: ILike(`%${search}%`) },
+					{ username: ILike(`%${search}%`) },
+				]
 			: {};
-		if (queryDto?.select) {
-			const users = await this.userRepository.getAllWithSelect({
-				where,
-				pagination,
-				...queryDto,
-			});
-			return users as unknown as PaginatedResult<DynamicUserResult<Q>>;
-		}
 
-		const user = await this.userRepository.getAll({
+		const [users, total] = await this.userRepository.findAndCount({
 			where,
-			pagination,
-			...queryDto,
+			order,
+			take,
+			skip,
 		});
-		return user as unknown as PaginatedResult<DynamicUserResult<Q>>;
+
+		return [
+			users,
+			{
+				total,
+				page,
+				perPage,
+				totalPages: Math.ceil(total / perPage),
+			},
+		];
 	}
 
-	async update(
-		id: string,
-		updateUserDto: UpdateUserDto,
-	): Promise<UserWithoutPassword> {
+	async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
 		if (updateUserDto.password) {
 			updateUserDto.password = await this.hashUtil.hash(
 				updateUserDto.password,
 			);
 		}
-		const user = await this.userRepository.update({ id }, updateUserDto);
+		const user = this.userRepository.save({
+			id,
+			...updateUserDto,
+		});
 		return user;
 	}
 
-	async delete(id: string): Promise<UserWithoutPassword> {
-		const user = await this.userRepository.delete({ id });
+	async delete(id: string): Promise<User> {
+		this.logger.debug('Deleting user by id', {
+			id,
+		});
+		const userToRemove = await this.userRepository.findOneByOrFail({ id });
+		const user = await this.userRepository.remove(userToRemove);
 		return user;
 	}
 }

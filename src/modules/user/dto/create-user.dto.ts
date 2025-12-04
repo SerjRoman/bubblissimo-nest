@@ -5,9 +5,9 @@ import {
 	IsString,
 	MinLength,
 	MaxLength,
-	IsEnum,
+	IsArray,
 } from 'class-validator';
-import { UserRolesEnum } from '../user.types';
+import { Role } from '../enums/user.enums';
 
 export class CreateUserDto {
 	@ApiProperty({ example: 'test@example.com' })
@@ -27,9 +27,9 @@ export class CreateUserDto {
 	@MaxLength(50)
 	password: string;
 
-	@ApiProperty({ enum: UserRolesEnum, example: UserRolesEnum.STUDENT })
-	@IsEnum(UserRolesEnum)
-	role: UserRolesEnum;
+	@ApiProperty({ isArray: true })
+	@IsArray()
+	roles: Role[];
 
 	@ApiProperty({ example: 'John' })
 	@IsString()

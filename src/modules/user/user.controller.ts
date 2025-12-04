@@ -22,12 +22,10 @@ import {
 	ApiResponse,
 	ApiBearerAuth,
 	ApiParam,
-	ApiQuery,
 } from '@nestjs/swagger';
-import { UserEntity } from './entities/user.entity';
-import { QueryUserDto } from './dto';
+import { User } from './entities/user.entity';
+import { QueryUsersDto } from './dto';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth-guard';
-import { QueryUsersDto } from './dto/query-users.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -40,7 +38,6 @@ export class UserController {
 
 	@Get()
 	@ApiOperation({ summary: 'Gets users' })
-	@ApiQuery({ type: QueryUserDto })
 	getAll(@Query() query: QueryUsersDto) {
 		this.logger.log(`Received GET request /users/.`, {
 			query,
@@ -53,7 +50,7 @@ export class UserController {
 	@ApiResponse({
 		status: 201,
 		description: 'User created successfully.',
-		type: UserEntity,
+		type: User,
 	})
 	@ApiResponse({ status: 409, description: 'Conflict. User already exists.' })
 	create(@Body() createUserDto: CreateUserDto) {
@@ -63,15 +60,12 @@ export class UserController {
 
 	@Get(':id')
 	@ApiOperation({ summary: 'Get a user by ID' })
-	@ApiQuery({ type: QueryUserDto })
 	@ApiParam({ name: 'id', description: 'User ID' })
-	@ApiResponse({ status: 200, description: 'User found.', type: UserEntity })
+	@ApiResponse({ status: 200, description: 'User found.', type: User })
 	@ApiResponse({ status: 404, description: 'User not found.' })
-	getById(@Param('id') id: string, @Query() query?: QueryUserDto) {
-		this.logger.log(`Received GET request /users/:id. ID: ${id}`, {
-			query,
-		});
-		return this.userService.getById(id, query);
+	getById(@Param('id') id: string) {
+		this.logger.log(`Received GET request /users/:id. ID: ${id}`);
+		return this.userService.getById(id);
 	}
 
 	@Put(':id')
@@ -79,13 +73,10 @@ export class UserController {
 	@ApiResponse({
 		status: 200,
 		description: 'User updated successfully.',
-		type: UserEntity,
+		type: User,
 	})
 	@ApiResponse({ status: 404, description: 'User not found.' })
-	update(
-		@Param('id', ParseUUIDPipe) id: string,
-		@Body() updateUserDto: UpdateUserDto,
-	) {
+	update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
 		this.logger.log(
 			JSON.stringify(
 				`Received UPDATE request /users/:id. ID: ${id}, BODY: ${updateUserDto}`,
