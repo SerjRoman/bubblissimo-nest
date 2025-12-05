@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto, QueryUsersDto, UpdateUserDto } from './dto';
-import { HashUtil } from '@common/utils';
+import { createPaginatedResponse, HashUtil } from '@common/utils';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { User } from './entities';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,7 +38,7 @@ export class UserService {
 		this.logger.debug('Finding users with the following parameters', {
 			queryDto,
 		});
-		const { page = 1, perPage = 10, order, search } = queryDto;
+		const { page, perPage, order, search } = queryDto;
 
 		const take = perPage;
 		const skip = (page - 1) * perPage;
@@ -57,15 +57,7 @@ export class UserService {
 			skip,
 		});
 
-		return [
-			users,
-			{
-				total,
-				page,
-				perPage,
-				totalPages: Math.ceil(total / perPage),
-			},
-		];
+		return createPaginatedResponse(users, { total, perPage, page });
 	}
 
 	async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

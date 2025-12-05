@@ -30,10 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	): Promise<UserFromTokenPayload> {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: payload.userId },
-			select: {
-				roles: true,
-				studentProfile: { id: true },
-				teacherProfile: { id: true },
+			relations: {
+				studentProfile: true,
+				teacherProfile: true,
 			},
 		});
 		return {

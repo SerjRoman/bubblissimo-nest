@@ -10,10 +10,8 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { QuestionType } from '../enums/question-type.enum';
-
-// Связи
-import { TeacherProfile } from '../../user/entities/teacher-profile.entity';
-import { QuestionToQuiz } from '../../quiz/entities/question-to-quiz.entity';
+import { QuestionToQuiz } from '@modules/quiz/entities';
+import { TeacherProfile } from '@modules/user/entities';
 
 @Entity('questions')
 export class Question {

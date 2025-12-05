@@ -31,6 +31,7 @@ export class QuestionToQuiz {
 
 	@ManyToOne(() => Question, (question) => question.quizzes, {
 		onDelete: 'CASCADE',
+		cascade: ['insert'],
 	})
 	question: Question;
 }

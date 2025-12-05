@@ -28,7 +28,7 @@ import { SessionModule } from '@modules/session/session.module';
 				migrationsRun: true,
 				autoLoadEntities: true,
 				synchronize: true,
-				logging: true,
+				// logging: true,
 			}),
 		}),
 
