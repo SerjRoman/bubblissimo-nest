@@ -8,16 +8,16 @@ import {
 import { Observable } from 'rxjs';
 
 @Injectable()
-export class TeacherGuard implements CanActivate {
+export class StudentGuard implements CanActivate {
 	canActivate(
 		context: ExecutionContext,
 	): boolean | Promise<boolean> | Observable<boolean> {
 		const request = context.switchToHttp().getRequest();
 		const user: UserFromTokenPayload = request.user;
 
-		if (!user || !user.teacherId) {
+		if (!user || !user.studentId) {
 			throw new ForbiddenException(
-				'This resource is available only for teachers.',
+				'This resource is available only for students.',
 			);
 		}
 		return true;

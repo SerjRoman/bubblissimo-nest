@@ -2,6 +2,9 @@ export {
 	TagCreateDto,
 	LanguageCreateDto,
 	SubjectCreateDto,
+	TagsCreateDto,
+	LanguagesCreateDto,
+	SubjectsCreateDto,
 } from './taxonomy-create.dto';
 export { TaxonomyQueryDto } from './taxonomy-query.dto';
 export {

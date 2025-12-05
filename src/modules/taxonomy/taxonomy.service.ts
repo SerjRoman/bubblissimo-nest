@@ -62,16 +62,16 @@ export class TaxonomyService {
 			page: dto.page,
 		});
 	}
-	async createTag(dto: TagCreateDto) {
-		const tag = this.tagRepository.create(dto);
-		return this.tagRepository.save(tag);
+	async createTags(dto: TagCreateDto[]) {
+		const tags = this.tagRepository.create(dto);
+		return this.tagRepository.save(tags);
 	}
-	async createLanguage(dto: LanguageCreateDto) {
-		const language = this.languageRepository.create(dto);
-		return this.languageRepository.save(language);
+	async createLanguages(dto: LanguageCreateDto[]) {
+		const languages = this.languageRepository.create(dto);
+		return this.languageRepository.save(languages);
 	}
-	async createSubject(dto: SubjectCreateDto) {
-		const subject = this.subjectRepository.create(dto);
-		return this.subjectRepository.save(subject);
+	async createSubjects(dto: SubjectCreateDto[]) {
+		const subjects = this.subjectRepository.create(dto);
+		return this.subjectRepository.save(subjects);
 	}
 }

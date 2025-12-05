@@ -57,8 +57,10 @@ export class QuizFilterQueryDto {
 		example: QuizVisibility.PUBLIC,
 	})
 	@IsOptional()
-	@IsEnum(QuizVisibility)
-	visibility?: QuizVisibility;
+	@Transform(({ value }) => (typeof value === 'string' ? [value] : value))
+	@IsArray()
+	@IsEnum(QuizVisibility, { each: true })
+	visibility?: QuizVisibility[];
 
 	@ApiPropertyOptional({
 		description: 'Filter by quiz status.',
@@ -66,8 +68,10 @@ export class QuizFilterQueryDto {
 		example: QuizStatus.PUBLISHED,
 	})
 	@IsOptional()
-	@IsEnum(QuizStatus)
-	status?: QuizStatus;
+	@Transform(({ value }) => (typeof value === 'string' ? [value] : value))
+	@IsArray()
+	@IsEnum(QuizStatus, { each: true })
+	status?: QuizStatus[];
 }
 
 export class QuizGetAllQueryDto extends IntersectionType(

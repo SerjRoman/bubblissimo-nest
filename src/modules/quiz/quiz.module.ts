@@ -5,6 +5,8 @@ import { QuestionToQuiz } from './entities/question-to-quiz.entity';
 import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
 import { User } from '@modules/user/entities';
+import { QuizAccessController } from './quiz-access.controller';
+import { QuizAccessService } from './quiz-access.service';
 
 @Module({
 	imports: [
@@ -16,8 +18,8 @@ import { User } from '@modules/user/entities';
 			User,
 		]),
 	],
-	controllers: [QuizController],
-	providers: [QuizService],
-	exports: [QuizService],
+	controllers: [QuizController, QuizAccessController],
+	providers: [QuizService, QuizAccessService],
+	exports: [QuizService, QuizAccessService],
 })
 export class QuizModule {}

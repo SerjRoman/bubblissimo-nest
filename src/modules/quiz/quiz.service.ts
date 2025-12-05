@@ -29,16 +29,20 @@ export class QuizService {
 		viewType: TeacherViewType,
 		dto: QuizGetAllQueryDto,
 	): Promise<PaginatedResult<Quiz>> {
-		const queryBuilder = this.quizRepository.createQueryBuilder('quiz');
-		QuizQueryHelper.createBaseQuery(queryBuilder, userId);
-		QuizQueryHelper.applyTeacherViewScope(
+		let queryBuilder = this.quizRepository.createQueryBuilder('quiz');
+		queryBuilder = QuizQueryHelper.createBaseQuery(queryBuilder, userId);
+		queryBuilder = QuizQueryHelper.applyTeacherViewScope(
 			queryBuilder,
 			viewType,
 			teacherId,
 			userId,
 		);
-		QuizQueryHelper.applyPagination(queryBuilder, dto.page, dto.perPage);
-		QuizQueryHelper.applyFiltersAndSort(queryBuilder, dto);
+		queryBuilder = QuizQueryHelper.applyPagination(
+			queryBuilder,
+			dto.page,
+			dto.perPage,
+		);
+		queryBuilder = QuizQueryHelper.applyFiltersAndSort(queryBuilder, dto);
 
 		const [quizzes, total] = await queryBuilder.getManyAndCount();
 		const enrichedQuizzes = quizzes.map((quiz) => ({
@@ -52,12 +56,14 @@ export class QuizService {
 		});
 	}
 	async create(teacherId: string, dto: QuizCreateDto): Promise<Quiz> {
-		const tags = dto.tagIds.map((id) => ({ id }));
-		const languages = dto.languageIds.map((id) => ({ id }));
+		const { tagIds, languageIds, subjectId, ...restDto } = dto;
+		const tags = tagIds.map((id) => ({ id }));
+		const languages = languageIds.map((id) => ({ id }));
 		const quiz = this.quizRepository.create({
-			...dto,
+			...restDto,
 			languages,
 			tags,
+			subject: { id: subjectId },
 			creator: { id: teacherId },
 			owner: { id: teacherId },
 			accesses: [

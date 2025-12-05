@@ -12,23 +12,6 @@ export class QuizQueryHelper {
 			.leftJoinAndSelect('quiz.owner', 'owner')
 			.leftJoinAndSelect('owner.user', 'userOwner')
 			.leftJoinAndSelect('creator.user', 'userCreator')
-			.leftJoinAndSelect('quiz.subject', 's');
-		// qb.addSelect([
-		// 	'userCreator.id',
-		// 	'userCreator.username',
-		// 	'userCreator.avatar',
-		// 	'userCreator.email',
-		// 	'userCreator.firstName',
-		// 	'userCreator.lastName',
-		// ]);
-		// qb.addSelect([
-		// 	'userOwner.id',
-		// 	'userOwner.username',
-		// 	'userOwner.avatar',
-		// 	'userOwner.email',
-		// 	'userOwner.firstName',
-		// 	'userOwner.lastName',
-		// ]);
 		qb.loadRelationCountAndMap(
 			'quiz.isFavourite',
 			'quiz.favouritedBy',
@@ -107,10 +90,10 @@ export class QuizQueryHelper {
 			qb.andWhere('subject.id = :subjectId', { subjectId });
 		}
 		if (status) {
-			qb.andWhere('quiz.status = :status', { status });
+			qb.andWhere('quiz.status IN (:...status)', { status });
 		}
 		if (visibility) {
-			qb.andWhere('quiz.visibility = :visibility', { visibility });
+			qb.andWhere('quiz.visibility IN (:...visibility)', { visibility });
 		}
 		if (tagIds && tagIds.length > 0) {
 			qb.leftJoin('quiz.tags', 'tags');
@@ -130,6 +113,7 @@ export class QuizQueryHelper {
 		} else {
 			qb.orderBy('quiz.createdAt', 'DESC');
 		}
+		return qb;
 	}
 
 	public static applyPagination(

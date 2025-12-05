@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+	IsArray,
+	IsNotEmpty,
+	IsString,
+	MaxLength,
+	MinLength,
+	ValidateNested,
+} from 'class-validator';
 
 export class TagCreateDto {
 	@ApiProperty({ example: 'Mathematics', description: 'Unique tag name' })
@@ -16,6 +24,13 @@ export class TagCreateDto {
 	@MaxLength(50)
 	slug: string;
 }
+export class TagsCreateDto {
+	@ApiProperty({ type: [TagCreateDto] })
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => TagCreateDto)
+	tags: TagCreateDto[];
+}
 export class LanguageCreateDto {
 	@ApiProperty({ example: 'English', description: 'Unique language name' })
 	@IsString()
@@ -31,6 +46,13 @@ export class LanguageCreateDto {
 	@MaxLength(50)
 	slug: string;
 }
+export class LanguagesCreateDto {
+	@ApiProperty({ type: [LanguageCreateDto] })
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => LanguageCreateDto)
+	languages: LanguageCreateDto[];
+}
 export class SubjectCreateDto {
 	@ApiProperty({ example: 'Mathematics', description: 'Unique subject name' })
 	@IsString()
@@ -45,4 +67,11 @@ export class SubjectCreateDto {
 	@MinLength(3)
 	@MaxLength(50)
 	slug: string;
+}
+export class SubjectsCreateDto {
+	@ApiProperty({ type: [SubjectCreateDto] })
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => SubjectCreateDto)
+	subjects: SubjectCreateDto[];
 }

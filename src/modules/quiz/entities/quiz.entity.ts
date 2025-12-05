@@ -67,8 +67,11 @@ export class Quiz {
 	@JoinTable({ name: 'quiz_languages' })
 	languages: Language[];
 
-	@ApiProperty({ type: () => Subject })
-	@ManyToOne(() => Subject, (s) => s.quizzes)
+	@ApiProperty({ type: () => Subject, nullable: false })
+	@ManyToOne(() => Subject, (s) => s.quizzes, {
+		nullable: false,
+		onDelete: 'CASCADE',
+	})
 	subject: Subject;
 
 	// --- User Relations ---
@@ -93,10 +96,13 @@ export class Quiz {
 
 	// --- Self-Reference (Original vs Copies) ---
 
-	@ManyToOne(() => Quiz, (q) => q.copies, { nullable: true })
+	@ManyToOne(() => Quiz, (q) => q.copies, {
+		nullable: true,
+		onDelete: 'SET NULL',
+	})
 	originalQuiz: Quiz;
 
-	@OneToMany(() => Quiz, (q) => q.originalQuiz)
+	@OneToMany(() => Quiz, (q) => q.originalQuiz, { onDelete: 'SET NULL' })
 	copies: Quiz[];
 
 	// --- Internal Quiz Relations ---
