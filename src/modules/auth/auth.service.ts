@@ -5,14 +5,22 @@ import {
 	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
-import { AuthenticatedUserResponse, TokenResponse } from './auth.types';
-import { LoginDto, MeDto, RefreshDto, RegisterUserDto } from './dto';
+import {
+	LoginDto,
+	MeDto,
+	RefreshDto,
+	RegisterUserDto,
+	AuthenticatedUserResponseDto,
+	TokenResponseDto,
+	RefreshResponseDto,
+} from './dto';
 import { TokenService } from './token.service';
 import { HashUtil } from '@common/utils/hash.util';
 import { EntityNotFoundError, Repository } from 'typeorm';
 import { User } from '@modules/user/entities';
 import { Role } from '@modules/user/enums';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +32,7 @@ export class AuthService {
 		private readonly tokenService: TokenService,
 		private readonly hashUtil: HashUtil,
 	) {}
-	async registerUser(dto: RegisterUserDto): Promise<TokenResponse> {
+	async register(dto: RegisterUserDto): Promise<TokenResponseDto> {
 		this.logger.log(`Attempting to register user with email: ${dto.email}`);
 
 		let isExisting = true;
@@ -48,7 +56,6 @@ export class AuthService {
 		}
 		this.logger.warn('Hashing password');
 		const hashedPassword = await this.hashUtil.hash(dto.password);
-
 
 		const createdUser = this.userRepository.create({
 			...dto,
@@ -77,9 +84,10 @@ export class AuthService {
 		});
 		this.logger.warn(`Tokens successfully granted: ${tokens}`);
 
-		return tokens;
+		const plainRegister = plainToInstance(TokenResponseDto, tokens);
+		return plainRegister;
 	}
-	async login(dto: LoginDto): Promise<TokenResponse> {
+	async login(dto: LoginDto): Promise<TokenResponseDto> {
 		this.logger.warn(
 			`Attemptin to log in the user with email: ${dto.email}`,
 		);
@@ -125,17 +133,21 @@ export class AuthService {
 		});
 		this.logger.warn(`Tokens successfully granted: ${tokens}`);
 
-		return tokens;
+		const plainLogin = plainToInstance(TokenResponseDto, tokens);
+		return plainLogin;
 	}
-	async refresh(dto: RefreshDto): Promise<{ accessToken: string }> {
+	async refresh(dto: RefreshDto): Promise<RefreshResponseDto> {
 		const userDataFromToken = await this.tokenService.verifyRefreshToken(
 			dto.refreshToken,
 		);
 		const newAccessToken =
 			await this.tokenService.generateAccessToken(userDataFromToken);
-		return { accessToken: newAccessToken };
+		const plainAccessToken = plainToInstance(RefreshResponseDto, {
+			accessToken: newAccessToken,
+		});
+		return plainAccessToken;
 	}
-	async me(dto: MeDto): Promise<AuthenticatedUserResponse> {
+	async me(dto: MeDto): Promise<AuthenticatedUserResponseDto> {
 		const userData = await this.userRepository.findOneOrFail({
 			where: { id: dto.userId },
 			select: {
@@ -148,7 +160,11 @@ export class AuthService {
 				username: true,
 			},
 		});
-		return userData;
+		const plainUserData = plainToInstance(
+			AuthenticatedUserResponseDto,
+			userData,
+		);
+		return plainUserData;
 	}
 	async logout(): Promise<void> {
 		// TODO: Store refreshToken in cache and delete it from cache on logout

@@ -1,5 +1,5 @@
 import { CreatePaginatedResponseDto } from '@common/dto';
-import { Language, Subject, Tag } from '../entities';
+import { Language, Subject, Tag } from '../../entities';
 
 export class PaginatedLanguageResponseDto extends CreatePaginatedResponseDto(
 	Language,

@@ -5,10 +5,10 @@ export {
 	TagsCreateDto,
 	LanguagesCreateDto,
 	SubjectsCreateDto,
-} from './taxonomy-create.dto';
-export { TaxonomyQueryDto } from './taxonomy-query.dto';
+} from './body';
+export { TaxonomyQueryDto } from './query';
 export {
 	PaginatedTagResponseDto,
 	PaginatedLanguageResponseDto,
 	PaginatedSubjectResponseDto,
-} from './paginated-taxonomy-response.dto';
+} from './res';
