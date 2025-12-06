@@ -10,16 +10,15 @@ import {
 	JoinTable,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { QuizStatus } from '../enums/quiz-status.enum';
-import { QuizVisibility } from '../enums/quiz-visibility.enum';
 
 import { QuizFolder } from './quiz-folder.entity';
 import { QuizAccess } from './quiz-access.entity';
 
 import { Tag, Language, Subject } from '@modules/taxonomy/entities';
-import { QuestionToQuiz } from './question-to-quiz.entity';
 import { TeacherProfile, User, StudentProfile } from '@modules/user/entities';
 import { Session } from '@modules/session/entities';
+import { QuizVisibility, QuizStatus } from '../enums';
+import { QuestionToQuiz } from '@modules/question/entities';
 
 @Entity('quizzes')
 export class Quiz {
@@ -87,9 +86,15 @@ export class Quiz {
 
 	@ManyToMany(() => User, (u) => u.favouriteQuizzes)
 	@JoinTable({
-		name: 'quiz_favourites',
+		name: 'users_favourite_quizzes',
 	})
 	favouritedBy: User[];
+
+	@ManyToMany(() => User, (u) => u.savedQuizzes)
+	@JoinTable({
+		name: 'users_saved_quizzes',
+	})
+	savedBy: User[];
 
 	@ManyToMany(() => StudentProfile, (s) => s.completedQuizzes)
 	completedBy: StudentProfile[];

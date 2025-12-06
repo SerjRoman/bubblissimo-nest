@@ -1,7 +1,8 @@
 import { Brackets, DataSource, SelectQueryBuilder } from 'typeorm';
 import { Quiz } from './entities';
-import { QuizAccessType, QuizStatus, TeacherViewType } from './enums';
 import { QuizCopyDto, QuizGetAllQueryDto } from './dto';
+import { QuizAccessType, QuizStatus, TeacherViewType } from './enums';
+import { TeacherProfile } from '@modules/user/entities';
 
 export class QuizQueryHelper {
 	public static createBaseQuery(
@@ -11,7 +12,7 @@ export class QuizQueryHelper {
 		qb.leftJoinAndSelect('quiz.creator', 'creator')
 			.leftJoinAndSelect('quiz.owner', 'owner')
 			.leftJoinAndSelect('owner.user', 'userOwner')
-			.leftJoinAndSelect('creator.user', 'userCreator')
+			.leftJoinAndSelect('creator.user', 'userCreator');
 		qb.loadRelationCountAndMap(
 			'quiz.isFavourite',
 			'quiz.favouritedBy',
@@ -173,14 +174,15 @@ export class QuizQueryHelper {
 					};
 				}),
 			});
-			const savedCopyOfQuiz = manager.save(Quiz, copiedQuiz);
+			const savedCopyOfQuiz = await manager.save(Quiz, copiedQuiz);
 
 			await manager
-				.getRepository(Quiz)
+				.getRepository(TeacherProfile)
 				.createQueryBuilder()
-				.relation(Quiz, 'copies')
-				.of(originalQuiz.id)
-				.add(savedCopyOfQuiz);
+				.relation(TeacherProfile, 'copiedQuizzes')
+				.of(teacherId)
+				.add(originalQuiz.id);
+
 			return savedCopyOfQuiz;
 		});
 	}

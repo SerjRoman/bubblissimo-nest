@@ -10,7 +10,6 @@ import {
 	Query,
 	UseGuards,
 } from '@nestjs/common';
-import { TeacherViewType } from './enums';
 import { QuizService } from './quiz.service';
 import { JwtAuthGuard, TeacherGuard } from '@auth/index';
 import {
@@ -22,14 +21,21 @@ import {
 	ApiUnauthorizedResponse,
 	ApiBody,
 } from '@nestjs/swagger';
-import { UserDecorator, type UserFromTokenPayload } from '@common/decorators';
+import {
+	TeacherIdDecorator,
+	UserDecorator,
+	type UserFromTokenPayload,
+} from '@common/decorators';
 import {
 	QuizCreateDto,
 	QuizGetAllQueryDto,
-	PaginatedQuizResponse,
+	PaginatedQuizGetAllResponse,
 	QuizToggleFavouriteDto,
+	QuizCopyDto,
+	QuizQueryDto,
+	QuizParamDto,
 } from './dto';
-import { QuizCopyDto } from './dto/quiz-copy.dto';
+import { TeacherViewType } from './enums';
 
 @ApiTags('Quizzes')
 @ApiBearerAuth()
@@ -41,7 +47,7 @@ export class QuizController {
 	constructor(private readonly quizService: QuizService) {}
 	@ApiOkResponse({
 		description: "Successful response with all teacher's quizzes",
-		type: PaginatedQuizResponse,
+		type: PaginatedQuizGetAllResponse,
 	})
 	@ApiUnauthorizedResponse({ description: 'User is unauthenticated' })
 	@ApiForbiddenResponse({
@@ -55,13 +61,14 @@ export class QuizController {
 	@Get('/teacher/my/:viewType')
 	getAllForTeacher(
 		@UserDecorator() user: UserFromTokenPayload,
+		@TeacherIdDecorator() teacherId: string,
 		@Param('viewType') viewType: TeacherViewType = TeacherViewType.ALL,
 		@Query() query: QuizGetAllQueryDto,
-	) {
+	): Promise<PaginatedQuizGetAllResponse> {
 		this.logger.log('GET /teacher/my/ request', query);
 		return this.quizService.getAllForTeacher(
 			user.userId,
-			user.teacherId!,
+			teacherId,
 			viewType,
 			query,
 		);
@@ -71,9 +78,9 @@ export class QuizController {
 	@UseGuards(TeacherGuard)
 	create(
 		@Body() body: QuizCreateDto,
-		@UserDecorator() user: UserFromTokenPayload,
+		@TeacherIdDecorator() teacherId: string,
 	) {
-		return this.quizService.create(user.teacherId!, body);
+		return this.quizService.create(teacherId, body);
 	}
 
 	@ApiOkResponse({
@@ -93,15 +100,24 @@ export class QuizController {
 	delete(
 		@Param('id') quizId: string,
 		@UserDecorator() user: UserFromTokenPayload,
+		@TeacherIdDecorator() teacherId: string,
 	) {
-		return this.quizService.delete(quizId, user.teacherId!);
+		return this.quizService.delete(quizId, teacherId);
 	}
 	@UseGuards(TeacherGuard)
 	@Post('teacher/copy')
 	copyQuiz(
 		@Body() body: QuizCopyDto,
 		@UserDecorator() user: UserFromTokenPayload,
+		@TeacherIdDecorator() teacherId: string,
 	) {
-		return this.quizService.copyQuiz(user.userId, user.teacherId!, body);
+		return this.quizService.copyQuiz(user.userId, teacherId, body);
+	}
+	@UseGuards(TeacherGuard)
+	@ApiParam({ type: 'string', name: 'id' })
+	@Get(':id')
+	getById(@Query() query: QuizQueryDto, @Param() { id }: QuizParamDto) {
+		console.log(id);
+		return this.quizService.getById(id, query);
 	}
 }

@@ -23,6 +23,7 @@ export class TokenService {
 		return { accessToken, refreshToken };
 	}
 	async generateAccessToken(payload: UserFromTokenPayload): Promise<string> {
+		console.log(payload);
 		const accesssToken = await this.jwtService.signAsync(payload, {
 			secret: this.configService.get<string>('ACCESS_SECRET_KEY'),
 			expiresIn: this.configService.get<string>(

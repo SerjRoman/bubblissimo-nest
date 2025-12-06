@@ -12,9 +12,9 @@ import {
 	UseGuards,
 } from '@nestjs/common';
 import {
-	PaginatedQuizAccessResponse,
+	PaginatedQuizAccessGetAllResponseDto,
 	QuizAccessCreateDto,
-	QuizAccessDeleteDto,
+	QuizAccessDeletParamDto,
 	QuizAccessGetAllQueryDto,
 	QuizAccessParamDto,
 	QuizAccessTransferOwnershipDto,
@@ -34,7 +34,7 @@ import {
 } from '@nestjs/swagger';
 import { QuizAccess } from './entities';
 
-@Controller('quizzes')
+@Controller('quiz-accesses')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, TeacherGuard)
 export class QuizAccessController {
@@ -66,7 +66,7 @@ export class QuizAccessController {
 	})
 	@ApiOkResponse({
 		description: 'A paginated list of quiz access records.',
-		type: PaginatedQuizAccessResponse,
+		type: PaginatedQuizAccessGetAllResponseDto,
 	})
 	@ApiForbiddenResponse({
 		description: 'Forbidden. Only the quiz owner can view access list.',
@@ -77,9 +77,13 @@ export class QuizAccessController {
 		@Param() { quizId }: QuizAccessParamDto,
 		@TeacherIdDecorator() teacherId: string,
 		@Query() query: QuizAccessGetAllQueryDto,
-	) {
+	): Promise<PaginatedQuizAccessGetAllResponseDto> {
 		this.logger.log('GET :quizId/accesses', { query });
-		return this.quizAccessService.getAllAccessesByQuiz(teacherId, quizId, query);
+		return this.quizAccessService.getAllAccessesByQuiz(
+			teacherId,
+			quizId,
+			query,
+		);
 	}
 
 	@ApiOperation({ summary: "Update a teacher's access type for a quiz" })
@@ -119,7 +123,7 @@ export class QuizAccessController {
 
 	@Delete(':quizId/accesses/:accessId')
 	revokeAccess(
-		@Param() params: QuizAccessDeleteDto,
+		@Param() params: QuizAccessDeletParamDto,
 		@TeacherIdDecorator() teacherId: string,
 	) {
 		return this.quizAccessService.revokeAccess(
