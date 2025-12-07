@@ -83,6 +83,14 @@ export class User {
 	@JoinTable({ name: 'users_favourite_quizzes' })
 	favouriteQuizzes: Quiz[];
 
+	@ApiProperty({
+		type: () => [Quiz],
+		description: 'Saved quizzes',
+	})
+	@ManyToMany(() => Quiz)
+	@JoinTable({ name: 'users_saved_quizzes' })
+	savedQuizzes: Quiz[];
+
 	@OneToMany(() => Notification, (notification) => notification.user)
 	notifications: Notification[];
 

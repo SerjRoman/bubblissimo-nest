@@ -3,11 +3,11 @@ import {
 	PaginationDto,
 	SearchQueryDto,
 } from '@common/dto';
-import { QUIZ_ORDER_FIELDS } from '../quiz.constants';
+import { QUIZ_ORDER_FIELDS } from '../../quiz.constants';
 import { IntersectionType, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsArray, IsString, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { QuizStatus, QuizVisibility } from '../enums';
+import { QuizStatus, QuizVisibility } from '../../enums/';
 
 export class QuizOrderByQueryDto extends CreateOrderQueryDto(
 	QUIZ_ORDER_FIELDS,

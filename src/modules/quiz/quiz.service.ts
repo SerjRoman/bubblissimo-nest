@@ -1,7 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Quiz } from './entities';
 import { DataSource, Repository } from 'typeorm';
-import { QuizAccessType, TeacherViewType } from './enums';
 import { QuizQueryHelper } from './quiz.query-helper';
 import { PaginatedResult } from '@common/types';
 import {
@@ -9,10 +8,15 @@ import {
 	QuizGetAllQueryDto,
 	QuizToggleFavouriteDto,
 	QuizCopyDto,
+	QuizSummaryDto,
+	QuizQueryDto,
 } from './dto';
 import { createPaginatedResponse } from '@common/utils';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { User } from '@modules/user/entities';
+import { TeacherProfile, User } from '@modules/user/entities';
+import { plainToInstance } from 'class-transformer';
+import { QuizAccessType, TeacherViewType } from './enums';
+import { QuizResponseDto } from './dto/res/quiz-response.dto';
 
 export class QuizService {
 	constructor(
@@ -20,6 +24,8 @@ export class QuizService {
 		private readonly quizRepository: Repository<Quiz>,
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
+		@InjectRepository(TeacherProfile)
+		private readonly teacherRepository: Repository<TeacherProfile>,
 		private dataSource: DataSource,
 	) {}
 
@@ -28,7 +34,7 @@ export class QuizService {
 		teacherId: string,
 		viewType: TeacherViewType,
 		dto: QuizGetAllQueryDto,
-	): Promise<PaginatedResult<Quiz>> {
+	): Promise<PaginatedResult<QuizSummaryDto>> {
 		let queryBuilder = this.quizRepository.createQueryBuilder('quiz');
 		queryBuilder = QuizQueryHelper.createBaseQuery(queryBuilder, userId);
 		queryBuilder = QuizQueryHelper.applyTeacherViewScope(
@@ -49,7 +55,11 @@ export class QuizService {
 			...quiz,
 			isFavourite: !!quiz.isFavourite,
 		}));
-		return createPaginatedResponse(enrichedQuizzes, {
+
+		const plainQuizzes = plainToInstance(QuizSummaryDto, enrichedQuizzes, {
+			excludeExtraneousValues: true,
+		});
+		return createPaginatedResponse(plainQuizzes, {
 			total,
 			perPage: dto.perPage,
 			page: dto.page,
@@ -135,5 +145,48 @@ export class QuizService {
 			dto,
 			teacherId,
 		);
+	}
+
+	async getById(id: string, dto: QuizQueryDto) {
+		const quiz = await this.quizRepository.findOneOrFail({
+			where: {
+				id,
+			},
+			relations: {
+				tags: true,
+				subject: true,
+				languages: true,
+				originalQuiz: dto.withOriginalQuiz,
+			},
+		});
+		const [favouritedBy, favouritesCount] =
+			await this.userRepository.findAndCount({
+				where: {
+					favouriteQuizzes: { id: quiz.id },
+				},
+				take: 10,
+			});
+		const [copiedBy, copiesCount] =
+			await this.teacherRepository.findAndCount({
+				where: {
+					copiedQuizzes: { id: quiz.id },
+				},
+				relations: {
+					user: true,
+				},
+				take: 10,
+			});
+
+		const enrichedQuiz = {
+			...quiz,
+			copiesCount,
+			favouritesCount,
+			favouritedBy,
+			copiedBy,
+		};
+
+		return plainToInstance(QuizResponseDto, enrichedQuiz, {
+			excludeExtraneousValues: true,
+		});
 	}
 }

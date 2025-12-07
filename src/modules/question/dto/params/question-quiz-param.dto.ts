@@ -1,15 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
-import { QuizAccessParamDto } from './quiz-access-param.dto';
 
-export class QuizAccessDeleteDto extends QuizAccessParamDto {
+export class QuestionGetByQuizParamDto {
 	@ApiProperty({
 		type: 'string',
 		required: true,
-		description: 'ID of the access to delete',
+		description: 'ID of the quiz to delete access to',
 	})
 	@IsString()
 	@IsNotEmpty()
 	@IsUUID('4')
-	accessId: string;
+	quizId: string;
 }

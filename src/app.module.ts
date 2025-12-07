@@ -12,6 +12,7 @@ import { NotificationModule } from '@modules/notification/notification.module';
 import { QuestionsModule } from '@modules/question/question.module';
 import { ClassroomModule } from '@modules/classroom/classroom.module';
 import { SessionModule } from '@modules/session/session.module';
+import { QuizAccessModule } from '@modules/quiz-access/quiz-access.module';
 
 @Module({
 	imports: [
@@ -39,6 +40,7 @@ import { SessionModule } from '@modules/session/session.module';
 		SharedUtilsModule,
 		TaxonomyModule,
 		QuizModule,
+		QuizAccessModule,
 		ReportModule,
 		NotificationModule,
 		QuestionsModule,

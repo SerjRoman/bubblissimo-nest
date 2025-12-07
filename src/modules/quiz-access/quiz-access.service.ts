@@ -1,13 +1,5 @@
 import { EntityNotFoundError, Repository } from 'typeorm';
-import { Quiz, QuizAccess } from './entities';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-	PaginatedQuizAccessResponse,
-	QuizAccessCreateDto,
-	QuizAccessGetAllQueryDto,
-	QuizAccessTransferOwnershipDto,
-	QuizAccessUpdateDto,
-} from './dto';
 import { QuizAccessType } from './enums';
 import {
 	ConflictException,
@@ -16,14 +8,22 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { createPaginatedResponse } from '@common/utils';
+import { plainToInstance } from 'class-transformer';
+import { QuizAccess } from './entities';
+import {
+	PaginatedQuizAccessGetAllResponseDto,
+	QuizAccessCreateDto,
+	QuizAccessGetAllQueryDto,
+	QuizAccessGetAllResponseDto,
+	QuizAccessTransferOwnershipDto,
+	QuizAccessUpdateDto,
+} from './dto';
 
 @Injectable()
 export class QuizAccessService {
 	constructor(
 		@InjectRepository(QuizAccess)
 		private readonly quizAccessRepository: Repository<QuizAccess>,
-		@InjectRepository(Quiz)
-		private readonly quizRepository: Repository<Quiz>,
 	) {}
 
 	private async checkIsTeacherOwner(teacherId: string, quizId: string) {
@@ -132,24 +132,27 @@ export class QuizAccessService {
 		teacherId: string,
 		quizId: string,
 		dto: QuizAccessGetAllQueryDto,
-	): Promise<PaginatedQuizAccessResponse> {
+	): Promise<PaginatedQuizAccessGetAllResponseDto> {
 		const [accesses, total] = await this.quizAccessRepository.findAndCount({
-            where: {
-                quiz: {id: quizId}
-            },
+			where: {
+				quiz: { id: quizId },
+			},
 			relations: {
 				quiz: dto.withQuiz,
-				teacher: dto.withTeacherProfile
-					? {
-							user: dto.withUserProfile,
-						}
-					: false,
+				teacher: dto.withTeacherProfile ?? { user: true },
 			},
 		});
-		return createPaginatedResponse(accesses, {
-			total,
+		const plainAccesses = plainToInstance(
+			QuizAccessGetAllResponseDto,
+			accesses,
+			{
+				excludeExtraneousValues: true,
+			},
+		);
+		return createPaginatedResponse(plainAccesses, {
 			page: dto.page,
 			perPage: dto.perPage,
+			total,
 		});
 	}
 }

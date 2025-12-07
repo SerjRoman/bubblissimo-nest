@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Quiz, QuizAccess, QuizFolder } from './entities';
-import { QuestionToQuiz } from './entities/question-to-quiz.entity';
+import { QuestionToQuiz } from '../question/entities/question-to-quiz.entity';
 import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
-import { User } from '@modules/user/entities';
-import { QuizAccessController } from './quiz-access.controller';
-import { QuizAccessService } from './quiz-access.service';
+import { TeacherProfile, User } from '@modules/user/entities';
 
 @Module({
 	imports: [
@@ -15,11 +13,12 @@ import { QuizAccessService } from './quiz-access.service';
 			QuizAccess,
 			QuestionToQuiz,
 			QuizFolder,
+			TeacherProfile,
 			User,
 		]),
 	],
-	controllers: [QuizController, QuizAccessController],
-	providers: [QuizService, QuizAccessService],
-	exports: [QuizService, QuizAccessService],
+	controllers: [QuizController],
+	providers: [QuizService],
+	exports: [QuizService],
 })
 export class QuizModule {}

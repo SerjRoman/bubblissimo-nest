@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { QuizVisibility } from '../../enums/quiz-visibility.enum';
 import {
 	IsArray,
 	IsBoolean,
@@ -11,7 +12,6 @@ import {
 	MaxLength,
 	MinLength,
 } from 'class-validator';
-import { QuizVisibility } from '../enums';
 
 export class QuizCreateDto {
 	@ApiProperty({
