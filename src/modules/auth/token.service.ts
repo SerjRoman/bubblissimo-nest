@@ -3,7 +3,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { StringValue } from 'ms';
-import { TokenResponse } from './auth.types';
+import { TokenResponseDto } from './dto';
 
 @Injectable()
 export class TokenService {
@@ -14,7 +14,7 @@ export class TokenService {
 
 	async generateTokens(
 		payload: UserFromTokenPayload,
-	): Promise<TokenResponse> {
+	): Promise<TokenResponseDto> {
 		const [accessToken, refreshToken] = await Promise.all([
 			this.generateAccessToken(payload),
 			this.generateRefreshToken(payload),

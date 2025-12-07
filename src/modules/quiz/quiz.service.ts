@@ -156,6 +156,7 @@ export class QuizService {
 				tags: true,
 				subject: true,
 				languages: true,
+				owner: { user: true },
 				originalQuiz: dto.withOriginalQuiz,
 			},
 		});
@@ -184,6 +185,7 @@ export class QuizService {
 			favouritedBy,
 			copiedBy,
 		};
+		console.log(enrichedQuiz);
 
 		return plainToInstance(QuizResponseDto, enrichedQuiz, {
 			excludeExtraneousValues: true,

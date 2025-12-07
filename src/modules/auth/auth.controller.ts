@@ -42,7 +42,7 @@ export class AuthController {
 	})
 	register(@Body() registerDto: RegisterUserDto) {
 		this.logger.log(`Received POST request /register: ${registerDto}`);
-		return this.authService.registerUser(registerDto);
+		return this.authService.register(registerDto);
 	}
 
 	@Post('refresh')

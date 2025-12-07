@@ -12,3 +12,4 @@ export {
 	PaginatedLanguageResponseDto,
 	PaginatedSubjectResponseDto,
 } from './res';
+export { TaxonomySummaryDto } from './taxonomy-summary.dto';

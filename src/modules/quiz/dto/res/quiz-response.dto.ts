@@ -1,21 +1,24 @@
 import { Expose, Type } from 'class-transformer';
 import { QuizSummaryDto } from '../quiz-summary.dto';
-import { Tag, Language, Subject } from '@modules/taxonomy/entities';
 import { ApiProperty } from '@nestjs/swagger';
 import { TeacherProfileSummaryDto, UserSummaryDto } from '@modules/user/dto';
+import { TaxonomySummaryDto } from '@modules/taxonomy/dto';
 
 export class QuizResponseDto extends QuizSummaryDto {
-	@ApiProperty({ type: () => [Tag] })
+	@ApiProperty({ type: () => [TaxonomySummaryDto] })
+	@Type(() => TaxonomySummaryDto)
 	@Expose()
-	tags: Tag[];
+	tags: TaxonomySummaryDto[];
 
-	@ApiProperty({ type: () => [Language] })
+	@ApiProperty({ type: () => [TaxonomySummaryDto] })
+	@Type(() => TaxonomySummaryDto)
 	@Expose()
-	languages: Language[];
+	languages: TaxonomySummaryDto[];
 
-	@ApiProperty({ type: () => Subject, nullable: false })
+	@ApiProperty({ type: () => TaxonomySummaryDto, nullable: false })
+	@Type(() => TaxonomySummaryDto)
 	@Expose()
-	subject: Subject;
+	subject: TaxonomySummaryDto;
 
 	@ApiProperty()
 	@Expose()
@@ -24,7 +27,7 @@ export class QuizResponseDto extends QuizSummaryDto {
 	@ApiProperty({ type: UserSummaryDto, nullable: true })
 	@Type(() => UserSummaryDto)
 	@Expose()
-	favouritedBy: UserSummaryDto;
+	favouritedBy: UserSummaryDto[];
 
 	@ApiProperty()
 	@Expose()
@@ -33,7 +36,7 @@ export class QuizResponseDto extends QuizSummaryDto {
 	@ApiProperty({ type: TeacherProfileSummaryDto, nullable: true })
 	@Type(() => TeacherProfileSummaryDto)
 	@Expose()
-	copiedBy: TeacherProfileSummaryDto;
+	copiedBy: TeacherProfileSummaryDto[];
 
 	@ApiProperty({ type: QuizSummaryDto, nullable: true })
 	@Type(() => QuizSummaryDto)

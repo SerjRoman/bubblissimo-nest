@@ -29,6 +29,13 @@ export class QuizSummaryDto {
 	@ApiProperty()
 	@Expose()
 	isFavourite: boolean;
+
+	@ApiProperty()
+	@Expose()
+	createdAt: Date;
+	@ApiProperty()
+	@Expose()
+	updatedAt: Date;
 }
 
 export class QuizDetailDto extends QuizSummaryDto {
