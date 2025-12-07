@@ -55,7 +55,7 @@ export class Quiz {
 	@Column({ default: false })
 	shuffleQuestions: boolean;
 
-	// --- Reference Relations ---
+	// --- Taxonomy Relations ---
 
 	@ApiProperty({ type: () => [Tag] })
 	@ManyToMany(() => Tag)
@@ -67,8 +67,11 @@ export class Quiz {
 	@JoinTable({ name: 'quiz_languages' })
 	languages: Language[];
 
-	@ApiProperty({ type: () => Subject })
-	@ManyToOne(() => Subject)
+	@ApiProperty({ type: () => Subject, nullable: false })
+	@ManyToOne(() => Subject, (s) => s.quizzes, {
+		nullable: false,
+		onDelete: 'CASCADE',
+	})
 	subject: Subject;
 
 	// --- User Relations ---
@@ -83,6 +86,9 @@ export class Quiz {
 	copiedBy: TeacherProfile[];
 
 	@ManyToMany(() => User, (u) => u.favouriteQuizzes)
+	@JoinTable({
+		name: 'quiz_favourites',
+	})
 	favouritedBy: User[];
 
 	@ManyToMany(() => StudentProfile, (s) => s.completedQuizzes)
@@ -90,10 +96,13 @@ export class Quiz {
 
 	// --- Self-Reference (Original vs Copies) ---
 
-	@ManyToOne(() => Quiz, (q) => q.copies, { nullable: true })
+	@ManyToOne(() => Quiz, (q) => q.copies, {
+		nullable: true,
+		onDelete: 'SET NULL',
+	})
 	originalQuiz: Quiz;
 
-	@OneToMany(() => Quiz, (q) => q.originalQuiz)
+	@OneToMany(() => Quiz, (q) => q.originalQuiz, { onDelete: 'SET NULL' })
 	copies: Quiz[];
 
 	// --- Internal Quiz Relations ---
@@ -101,7 +110,7 @@ export class Quiz {
 	@ManyToMany(() => QuizFolder, (folder) => folder.quizzes)
 	folders: QuizFolder[];
 
-	@OneToMany(() => QuizAccess, (access) => access.quiz)
+	@OneToMany(() => QuizAccess, (access) => access.quiz, { cascade: true })
 	accesses: QuizAccess[];
 
 	@OneToMany(() => QuestionToQuiz, (q2q) => q2q.quiz, { cascade: true })
@@ -115,4 +124,6 @@ export class Quiz {
 
 	@UpdateDateColumn()
 	updatedAt: Date;
+
+	isFavourite: boolean;
 }

@@ -1,3 +1,4 @@
+import { UserFromTokenPayload } from '@common/decorators';
 import {
 	Injectable,
 	CanActivate,
@@ -5,7 +6,6 @@ import {
 	ForbiddenException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { UserFromTokenPayload } from '../../common/decorators/user.decorator';
 
 @Injectable()
 export class TeacherGuard implements CanActivate {

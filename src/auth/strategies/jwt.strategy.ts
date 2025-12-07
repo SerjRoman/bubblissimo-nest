@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import {
+	Injectable,
+	InternalServerErrorException,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { UserFromTokenPayload } from '@common/decorators';
-import { Repository } from 'typeorm';
+import { EntityNotFoundError, Repository } from 'typeorm';
 import { User } from '@modules/user/entities';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -28,19 +32,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	async validate(
 		payload: UserFromTokenPayload,
 	): Promise<UserFromTokenPayload> {
-		const user = await this.userRepository.findOneOrFail({
-			where: { id: payload.userId },
-			select: {
-				roles: true,
-				studentProfile: { id: true },
-				teacherProfile: { id: true },
-			},
-		});
-		return {
-			userId: payload.userId,
-			roles: user.roles,
-			studentId: user.studentProfile?.id,
-			teacherId: user.teacherProfile?.id,
-		};
+		try {
+			const user = await this.userRepository.findOneOrFail({
+				where: { id: payload.userId },
+				relations: {
+					studentProfile: true,
+					teacherProfile: true,
+				},
+			});
+			return {
+				userId: payload.userId,
+				roles: user.roles,
+				studentId: user.studentProfile?.id,
+				teacherId: user.teacherProfile?.id,
+			};
+		} catch (error) {
+			if (error instanceof EntityNotFoundError) {
+				throw new UnauthorizedException();
+			}
+			throw new InternalServerErrorException();
+		}
 	}
 }

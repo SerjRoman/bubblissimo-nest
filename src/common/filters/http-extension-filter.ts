@@ -3,10 +3,10 @@ import {
 	Catch,
 	ArgumentsHost,
 	HttpException,
-	HttpStatus,
 	Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { EntityNotFoundError, QueryFailedError, TypeORMError } from 'typeorm';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -17,32 +17,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
 		const response = ctx.getResponse<Response>();
 		const request = ctx.getRequest<Request>();
 
-		const status =
-			exception instanceof HttpException
-				? exception.getStatus()
-				: HttpStatus.INTERNAL_SERVER_ERROR;
+		let status: number = 500;
+		let message: string = 'Internal Server Error';
+		if (exception instanceof HttpException) {
+			status = exception.getStatus();
+			message = exception.message;
+		} else if (exception instanceof TypeORMError) {
+			if (exception instanceof EntityNotFoundError) {
+				status = 404;
+				message = exception.message;
+			} else if (exception instanceof QueryFailedError) {
+				message = exception.message;
+			}
+		}
 
-		const errorResponse =
-			exception instanceof HttpException
-				? exception.getResponse()
-				: {
-						statusCode: status,
-						message: 'Internal Server Error',
-						error: 'Internal Server Error',
-					};
-		const responseBody =
-			typeof errorResponse === 'object'
-				? {
-						...errorResponse,
-						timestamp: new Date().toISOString(),
-						path: request.url,
-					}
-				: {
-						statusCode: status,
-						message: errorResponse,
-						timestamp: new Date().toISOString(),
-						path: request.url,
-					};
+		const responseBody = {
+			statusCode: status,
+			message: message,
+			timestamp: new Date().toISOString(),
+			path: request.url,
+		};
 		response.status(status).json(responseBody);
 	}
 }

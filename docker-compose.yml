@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:17
-    container_name: BubblisimoPostgres
+    container_name: BubblisimoPostgresNest
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

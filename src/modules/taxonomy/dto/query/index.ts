@@ -1,0 +1,1 @@
+export { TaxonomyQueryDto } from './taxonomy-query.dto';

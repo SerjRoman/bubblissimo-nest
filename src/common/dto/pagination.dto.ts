@@ -28,3 +28,24 @@ export class PaginationDto {
 	@Max(100)
 	perPage: number = 10;
 }
+
+export class PaginationMetaDto {
+	@ApiProperty()
+	readonly page: number;
+
+	@ApiProperty()
+	readonly perPage: number;
+
+	@ApiProperty()
+	readonly total: number;
+
+	@ApiProperty()
+	readonly totalPages: number;
+
+	constructor({ page, perPage, totalPages, total }) {
+		this.page = page;
+		this.perPage = perPage;
+		this.totalPages = totalPages;
+		this.total = total;
+	}
+}

@@ -1,1 +1,5 @@
-export type { PaginationParams, PaginatedResult } from './pagination.types';
+export type {
+	PaginationParams,
+	PaginatedResult,
+	PaginationData,
+} from './pagination.types';

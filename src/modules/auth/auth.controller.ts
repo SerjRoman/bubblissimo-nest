@@ -1,12 +1,4 @@
-import {
-	Body,
-	Controller,
-	Get,
-	Injectable,
-	Logger,
-	Post,
-	UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
 import {
 	ApiBearerAuth,
 	ApiOperation,
@@ -17,7 +9,7 @@ import { LoginDto, RefreshDto, RegisterUserDto } from './dto';
 import { AuthService } from './auth.service';
 import { UserDecorator, type UserFromTokenPayload } from '@common/decorators';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth-guard';
-@Injectable()
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
